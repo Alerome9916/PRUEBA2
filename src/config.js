@@ -81,6 +81,20 @@ export const UNIT_TYPES = {
     width: 24,
     height: 56,
   },
+  mamon: {
+    label: "Mamon",
+    cost: 600,
+    hp: 240,
+    speed: 78,
+    damage: 34,
+    attackRange: 285,
+    visionRange: 320,
+    attackInterval: 0.725,
+    projectileSpeed: 520,
+    width: 28,
+    height: 60,
+    uniqueForPlayer: true,
+  },
 };
 
 export const ECONOMY = {

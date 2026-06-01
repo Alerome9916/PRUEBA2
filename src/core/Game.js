@@ -30,6 +30,7 @@ export class Game {
     this.units = [];
     this.projectiles = [];
     this.statues = null;
+    this.playerUniqueUnitsUsed = new Set();
     this.enemyTimers = {
       miner: 4,
       soldier: 6,
@@ -232,6 +233,11 @@ export class Game {
       return;
     }
 
+    if (unitConfig.uniqueForPlayer && this.playerUniqueUnitsUsed.has(type)) {
+      this.setStatus(`${unitConfig.label} solo puede entrenarse una vez por partida.`, 2.2);
+      return;
+    }
+
     if (this.gold < unitConfig.cost) {
       this.setStatus(`Oro insuficiente para ${unitConfig.label}.`, 1.8);
       return;
@@ -239,12 +245,17 @@ export class Game {
 
     this.gold -= unitConfig.cost;
     this.spawnUnit(type, FACTIONS.player);
+
+    if (unitConfig.uniqueForPlayer) {
+      this.playerUniqueUnitsUsed.add(type);
+    }
+
     this.setStatus(`${unitConfig.label} aliado entrenado.`, 1.8);
   }
 
   trySpawnEnemyUnit(type) {
     const unitConfig = UNIT_TYPES[type];
-    if (!unitConfig || this.enemyGold < unitConfig.cost) {
+    if (!unitConfig || unitConfig.uniqueForPlayer || this.enemyGold < unitConfig.cost) {
       return false;
     }
 
@@ -380,7 +391,9 @@ export class Game {
 
     for (const button of this.hudElements.trainButtons ?? []) {
       const unitConfig = UNIT_TYPES[button.dataset.unit];
-      button.disabled = this.gameOver || !unitConfig || this.gold < unitConfig.cost;
+      const uniqueAlreadyUsed = unitConfig?.uniqueForPlayer && this.playerUniqueUnitsUsed.has(button.dataset.unit);
+      button.disabled = this.gameOver || !unitConfig || uniqueAlreadyUsed || this.gold < unitConfig.cost;
+      button.title = uniqueAlreadyUsed ? "Unidad unica ya utilizada en esta partida" : "";
     }
   }
 

@@ -39,6 +39,7 @@ Luego abre `http://localhost:8000`.
 
 - Mueve el mouse a los bordes izquierdo/derecho de la pantalla para desplazar la camara.
 - Usa `Flecha izquierda`, `Flecha derecha`, `A` o `D` como alternativa.
-- Entrena mineros, Swordwrath y Archidon desde el HUD.
+- Entrena mineros, Swordwrath, Archidon y al Mamon unico desde el HUD.
+- Mamon cuesta 600 de oro, solo puede usarse una vez por partida, tiene el doble de vida que un Archidon y dispara el doble de rapido.
 - Usa `Defender`, `Mantener` y `Atacar` para cambiar el comportamiento aliado global.
 - Destruye la estatua enemiga antes de que la IA destruya la tuya.

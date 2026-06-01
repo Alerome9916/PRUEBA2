@@ -170,7 +170,7 @@ export class Unit {
       return;
     }
 
-    if (this.type === "archer") {
+    if (this.type === "archer" || this.type === "mamon") {
       context.addProjectile(this, target);
     } else {
       target.takeDamage(this.damage);
@@ -268,9 +268,10 @@ export class Unit {
       return;
     }
 
-    if (this.type === "archer") {
+    if (this.type === "archer" || this.type === "mamon") {
+      ctx.lineWidth = this.type === "mamon" ? 4 : 3;
       ctx.beginPath();
-      ctx.arc(18, bodyTop + 18, 15, -Math.PI / 2, Math.PI / 2);
+      ctx.arc(18, bodyTop + 18, this.type === "mamon" ? 18 : 15, -Math.PI / 2, Math.PI / 2);
       ctx.stroke();
       return;
     }
