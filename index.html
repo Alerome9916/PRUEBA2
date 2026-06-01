@@ -10,12 +10,38 @@
     <main id="game-root" aria-label="Prototipo de estrategia lateral">
       <canvas id="game-canvas"></canvas>
 
-      <section id="hud" aria-label="Interfaz de juego">
+      <section id="start-menu" class="menu-screen" aria-label="Menu inicial">
+        <div class="menu-card">
+          <p class="eyebrow">Prototipo Canvas</p>
+          <h1>Guerra Lateral</h1>
+          <p class="menu-copy">
+            Gestiona oro, entrena tropas y destruye la estatua enemiga mientras la IA presiona sin descanso.
+          </p>
+
+          <label class="difficulty-field" for="difficulty-select">
+            Modalidad de dificultad
+            <select id="difficulty-select">
+              <option value="easy">Facil</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Dificil</option>
+            </select>
+          </label>
+          <p id="difficulty-description" class="difficulty-description"></p>
+
+          <div class="menu-actions">
+            <button id="start-game" type="button" class="primary-action">Ingresar al campo</button>
+            <button id="toggle-music" type="button">Musica: OFF</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="hud" class="is-hidden" aria-label="Interfaz de juego">
         <div class="resource-panel">
           <span>Oro: <strong id="gold-counter">500</strong></span>
           <span>Base aliada: <strong id="player-hp">2000</strong></span>
           <span>Base enemiga: <strong id="enemy-hp">2000</strong></span>
           <span>Unidades A/E: <strong id="unit-counter">0 / 0</strong></span>
+          <span>Dificultad: <strong id="difficulty-label">Normal</strong></span>
         </div>
 
         <div class="command-panel" aria-label="Comandos generales">
@@ -27,8 +53,12 @@
         <div class="train-panel" aria-label="Entrenamiento de unidades">
           <button type="button" data-unit="miner">Minero 150</button>
           <button type="button" data-unit="clubman">Swordwrath 125</button>
+          <button type="button" data-unit="squire">Escudero 200</button>
           <button type="button" data-unit="archer">Archidon 300</button>
+          <button type="button" data-unit="cavalry">Caballeria 450</button>
           <button type="button" data-unit="mamon">Mamon 600 - unico</button>
+          <button type="button" data-unit="dragon">Dragon 800</button>
+          <button type="button" data-unit="giant">Gigante 1000</button>
         </div>
       </section>
 

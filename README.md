@@ -39,7 +39,10 @@ Luego abre `http://localhost:8000`.
 
 - Mueve el mouse a los bordes izquierdo/derecho de la pantalla para desplazar la camara.
 - Usa `Flecha izquierda`, `Flecha derecha`, `A` o `D` como alternativa.
-- Entrena mineros, Swordwrath, Archidon y al Mamon unico desde el HUD.
+- Antes de entrar puedes elegir dificultad: Facil, Normal o Dificil.
+- La partida inicia desde una interfaz de menu y activa una banda sonora generativa opcional.
+- Entrena mineros, Swordwrath, Escuderos, Archidon, Caballeria, Mamon, Dragones y Gigantes desde el HUD.
 - Mamon cuesta 600 de oro, solo puede usarse una vez por partida, tiene el doble de vida que un Archidon y dispara el doble de rapido.
+- La IA enemiga siempre juega en modo Atacar y escala su ritmo, vida y dano segun la dificultad.
 - Usa `Defender`, `Mantener` y `Atacar` para cambiar el comportamiento aliado global.
 - Destruye la estatua enemiga antes de que la IA destruya la tuya.

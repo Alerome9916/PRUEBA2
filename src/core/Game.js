@@ -1,4 +1,4 @@
-import { COLORS, COMMANDS, ECONOMY, FACTIONS, UNIT_TYPES, WORLD } from "../config.js";
+import { COLORS, COMMANDS, DIFFICULTIES, ECONOMY, FACTIONS, UNIT_TYPES, WORLD } from "../config.js";
 import { InputController } from "./InputController.js";
 import { Camera } from "./Camera.js";
 import { createBattlefield } from "../world/mapConfig.js";
@@ -7,14 +7,15 @@ import { Statue } from "../entities/Statue.js";
 import { Unit } from "../entities/Unit.js";
 
 export class Game {
-  constructor(canvas, hudElements = {}) {
+  constructor(canvas, hudElements = {}, options = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.hudElements = hudElements;
+    this.difficulty = DIFFICULTIES[options.difficulty] ?? DIFFICULTIES.normal;
     this.gold = WORLD.playerGold;
-    this.enemyGold = WORLD.enemyGold;
+    this.enemyGold = Math.floor(WORLD.enemyGold * this.difficulty.enemyGoldMultiplier);
     this.playerCommand = COMMANDS.hold;
-    this.enemyCommand = COMMANDS.hold;
+    this.enemyCommand = COMMANDS.attack;
     this.statusMessage = "Entrena unidades, mina oro y destruye la base enemiga.";
     this.statusTimer = 5;
     this.gameOver = false;
@@ -32,9 +33,9 @@ export class Game {
     this.statues = null;
     this.playerUniqueUnitsUsed = new Set();
     this.enemyTimers = {
-      miner: 4,
-      soldier: 6,
-      wave: ECONOMY.enemyWaveInterval,
+      miner: this.getEnemyInterval(4),
+      soldier: this.getEnemyInterval(6),
+      wave: this.getEnemyInterval(ECONOMY.enemyWaveInterval),
       waveActive: 0,
     };
 
@@ -104,13 +105,45 @@ export class Game {
     }
   }
 
+  getEnemyInterval(baseSeconds) {
+    return baseSeconds * this.difficulty.enemySpawnMultiplier;
+  }
+
+  getEnemyRecruitType() {
+    const roll = Math.random();
+
+    if (roll < 0.28) {
+      return "clubman";
+    }
+
+    if (roll < 0.45) {
+      return "squire";
+    }
+
+    if (roll < 0.62) {
+      return "archer";
+    }
+
+    if (roll < 0.79) {
+      return "cavalry";
+    }
+
+    if (roll < 0.92) {
+      return "dragon";
+    }
+
+    return "giant";
+  }
+
   updateEnemyAi(deltaSeconds) {
+    this.enemyCommand = COMMANDS.attack;
+    this.enemyGold += this.difficulty.enemyPassiveGoldPerSecond * deltaSeconds;
     this.enemyTimers.miner -= deltaSeconds;
     this.enemyTimers.soldier -= deltaSeconds;
     this.enemyTimers.wave -= deltaSeconds;
 
     if (this.enemyTimers.miner <= 0) {
-      this.enemyTimers.miner = ECONOMY.enemyMinerInterval;
+      this.enemyTimers.miner = this.getEnemyInterval(ECONOMY.enemyMinerInterval);
       const enemyMiners = this.countUnits(FACTIONS.enemy, "miner");
       if (enemyMiners < 4) {
         this.trySpawnEnemyUnit("miner");
@@ -118,26 +151,21 @@ export class Game {
     }
 
     if (this.enemyTimers.soldier <= 0) {
-      this.enemyTimers.soldier = ECONOMY.enemySoldierInterval;
-      const type = Math.random() < 0.68 ? "clubman" : "archer";
-      this.trySpawnEnemyUnit(type);
+      this.enemyTimers.soldier = this.getEnemyInterval(ECONOMY.enemySoldierInterval);
+      this.trySpawnEnemyUnit(this.getEnemyRecruitType());
     }
 
     if (this.enemyTimers.wave <= 0) {
-      this.enemyTimers.wave = ECONOMY.enemyWaveInterval;
+      this.enemyTimers.wave = this.getEnemyInterval(ECONOMY.enemyWaveInterval);
       this.enemyTimers.waveActive = ECONOMY.enemyWaveDuration;
-      this.enemyCommand = COMMANDS.attack;
-      this.setStatus("La IA enemiga lanza una oleada!", 4);
-      this.trySpawnEnemyUnit("clubman");
-      this.trySpawnEnemyUnit(Math.random() < 0.5 ? "clubman" : "archer");
+      this.setStatus("La IA enemiga avanza sin descanso!", 4);
+      this.trySpawnEnemyUnit("cavalry");
+      this.trySpawnEnemyUnit(Math.random() < 0.5 ? "dragon" : "giant");
+      this.trySpawnEnemyUnit(this.getEnemyRecruitType());
     }
 
     if (this.enemyTimers.waveActive > 0) {
       this.enemyTimers.waveActive = Math.max(0, this.enemyTimers.waveActive - deltaSeconds);
-      if (this.enemyTimers.waveActive === 0) {
-        this.enemyCommand = COMMANDS.hold;
-        this.assignHoldPositions(FACTIONS.enemy);
-      }
     }
   }
 
@@ -195,7 +223,7 @@ export class Game {
     this.spawnUnit("miner", FACTIONS.enemy);
     this.spawnUnit("clubman", FACTIONS.enemy);
     this.assignHoldPositions(FACTIONS.player);
-    this.assignHoldPositions(FACTIONS.enemy);
+    this.enemyCommand = COMMANDS.attack;
   }
 
   bindUi() {
@@ -280,6 +308,12 @@ export class Game {
       groundY: this.battlefield.groundY,
       battlefield: this.battlefield,
     });
+
+    if (faction === FACTIONS.enemy) {
+      unit.maxHp = Math.round(unit.maxHp * this.difficulty.enemyHpMultiplier);
+      unit.hp = unit.maxHp;
+      unit.damage = Math.round(unit.damage * this.difficulty.enemyDamageMultiplier);
+    }
 
     if (faction === FACTIONS.player && this.playerCommand === COMMANDS.hold) {
       unit.holdPosition = Math.max(unit.x, this.battlefield.centerX);
@@ -385,6 +419,10 @@ export class Game {
       this.hudElements.unitCounter.textContent = `${playerUnits} / ${enemyUnits}`;
     }
 
+    if (this.hudElements.difficultyLabel) {
+      this.hudElements.difficultyLabel.textContent = this.difficulty.label;
+    }
+
     if (this.hudElements.status) {
       this.hudElements.status.textContent = this.statusTimer > 0 || this.gameOver ? this.statusMessage : "";
     }
@@ -410,27 +448,83 @@ export class Game {
   }
 
   drawSky() {
-    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.viewport.height);
+    const { ctx } = this;
+    const gradient = ctx.createLinearGradient(0, 0, 0, this.viewport.height);
     gradient.addColorStop(0, COLORS.skyTop);
     gradient.addColorStop(1, COLORS.skyBottom);
-    this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, this.viewport.width, this.viewport.height);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, this.viewport.width, this.viewport.height);
+
+    ctx.fillStyle = "rgba(253, 224, 71, 0.9)";
+    ctx.beginPath();
+    ctx.arc(this.viewport.width - 130, 95, 38, 0, Math.PI * 2);
+    ctx.fill();
+
+    this.drawCloud(160 - this.camera.x * 0.08, 92, 1.1);
+    this.drawCloud(520 - this.camera.x * 0.05, 140, 0.8);
+    this.drawCloud(900 - this.camera.x * 0.07, 70, 0.95);
+  }
+
+  drawCloud(x, y, scale) {
+    const { ctx } = this;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+    ctx.beginPath();
+    ctx.arc(x, y, 22 * scale, 0, Math.PI * 2);
+    ctx.arc(x + 24 * scale, y - 10 * scale, 30 * scale, 0, Math.PI * 2);
+    ctx.arc(x + 58 * scale, y, 24 * scale, 0, Math.PI * 2);
+    ctx.arc(x + 30 * scale, y + 10 * scale, 28 * scale, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   drawBattlefield() {
     const { ctx, battlefield } = this;
 
     this.drawWorldGuides();
+    this.drawMountains();
 
     ctx.fillStyle = COLORS.ground;
     ctx.fillRect(0, battlefield.groundY, battlefield.width, battlefield.height - battlefield.groundY);
     ctx.fillStyle = COLORS.groundHighlight;
     ctx.fillRect(0, battlefield.groundY, battlefield.width, 10);
+    ctx.fillStyle = COLORS.grass;
+    for (let x = 0; x < battlefield.width; x += 28) {
+      const bladeHeight = 8 + ((x / 7) % 5);
+      ctx.fillRect(x, battlefield.groundY - bladeHeight, 3, bladeHeight);
+    }
 
     this.drawMine(battlefield.playerMine);
     this.drawMine(battlefield.enemyMine);
     this.statues.player.draw(ctx);
     this.statues.enemy.draw(ctx);
+  }
+
+  drawMountains() {
+    const { ctx, battlefield } = this;
+    const baseY = battlefield.groundY;
+
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = COLORS.mountainBack;
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    for (let x = 0; x <= battlefield.width + 220; x += 220) {
+      ctx.lineTo(x + 110, baseY - 180 - (x % 440 === 0 ? 40 : 0));
+      ctx.lineTo(x + 220, baseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = COLORS.mountainFront;
+    ctx.beginPath();
+    ctx.moveTo(0, baseY);
+    for (let x = -80; x <= battlefield.width + 260; x += 260) {
+      ctx.lineTo(x + 130, baseY - 120 - (x % 520 === 0 ? 30 : 0));
+      ctx.lineTo(x + 260, baseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 
   drawWorldGuides() {

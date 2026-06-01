@@ -1,6 +1,7 @@
 import { COLORS, COMMANDS, FACTIONS, UNIT_TYPES } from "../config.js";
 
 const ARRIVAL_DISTANCE = 5;
+const RANGED_TYPES = new Set(["archer", "mamon", "dragon"]);
 
 export class Unit {
   constructor({ type, faction, x, groundY, battlefield }) {
@@ -26,6 +27,7 @@ export class Unit {
     this.minePhase = "toMine";
     this.mineTimer = 0;
     this.carriedGold = 0;
+    this.animationTime = Math.random() * 10;
   }
 
   get isAlive() {
@@ -56,6 +58,7 @@ export class Unit {
       return;
     }
 
+    this.animationTime += deltaSeconds;
     this.groundY = context.battlefield.groundY;
     this.attackTimer = Math.max(0, this.attackTimer - deltaSeconds);
 
@@ -170,7 +173,7 @@ export class Unit {
       return;
     }
 
-    if (this.type === "archer" || this.type === "mamon") {
+    if (RANGED_TYPES.has(this.type)) {
       context.addProjectile(this, target);
     } else {
       target.takeDamage(this.damage);
@@ -217,18 +220,40 @@ export class Unit {
     }
 
     const color = this.faction === FACTIONS.player ? COLORS.playerUnit : COLORS.enemyUnit;
-    const headY = this.groundY - this.height;
-    const bodyTop = headY + 11;
-    const bodyBottom = this.groundY - 13;
+    const bob = this.state === "walking" ? Math.sin(this.animationTime * 9) * 2 : 0;
 
     ctx.save();
-    ctx.translate(this.x, 0);
+    ctx.translate(this.x, bob);
     ctx.scale(this.facing < 0 ? -1 : 1, 1);
+    this.drawShadow(ctx);
 
+    if (this.stats.flying) {
+      this.drawDragon(ctx, color);
+    } else if (this.stats.giant) {
+      this.drawGiant(ctx, color);
+    } else if (this.stats.mounted) {
+      this.drawCavalry(ctx, color);
+    } else {
+      this.drawHumanoid(ctx, color);
+    }
+
+    ctx.restore();
+
+    this.drawHealthBar(ctx);
+    this.drawMiningProgress(ctx);
+  }
+
+  drawShadow(ctx) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
     ctx.beginPath();
     ctx.ellipse(0, this.groundY - 2, this.width, 6, 0, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  drawHumanoid(ctx, color) {
+    const headY = this.groundY - this.height;
+    const bodyTop = headY + 11;
+    const bodyBottom = this.groundY - 13;
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 5;
@@ -250,10 +275,106 @@ export class Unit {
     ctx.fill();
 
     this.drawWeapon(ctx, bodyTop);
-    ctx.restore();
+  }
 
-    this.drawHealthBar(ctx);
-    this.drawMiningProgress(ctx);
+  drawCavalry(ctx, color) {
+    const horseY = this.groundY - 30;
+    ctx.fillStyle = "#7c4a25";
+    ctx.fillRect(-30, horseY - 12, 56, 24);
+    ctx.beginPath();
+    ctx.arc(30, horseY - 16, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#3f2a12";
+    ctx.lineWidth = 4;
+    for (const x of [-20, 0, 18]) {
+      ctx.beginPath();
+      ctx.moveTo(x, horseY + 10);
+      ctx.lineTo(x - 6, this.groundY);
+      ctx.moveTo(x + 8, horseY + 10);
+      ctx.lineTo(x + 12, this.groundY);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-6, horseY - 34);
+    ctx.lineTo(-2, horseY - 8);
+    ctx.moveTo(-2, horseY - 20);
+    ctx.lineTo(22, horseY - 28);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(-8, horseY - 42, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(16, horseY - 29);
+    ctx.lineTo(52, horseY - 38);
+    ctx.stroke();
+  }
+
+  drawDragon(ctx, color) {
+    const baseY = this.groundY - 62 + Math.sin(this.animationTime * 5) * 5;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, baseY, 36, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-12, baseY - 12);
+    ctx.lineTo(-54, baseY - 42);
+    ctx.lineTo(-35, baseY - 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(5, baseY - 14);
+    ctx.lineTo(44, baseY - 45);
+    ctx.lineTo(34, baseY - 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(42, baseY - 8, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#facc15";
+    ctx.beginPath();
+    ctx.arc(47, baseY - 12, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-34, baseY + 2);
+    ctx.lineTo(-62, baseY + 18);
+    ctx.stroke();
+  }
+
+  drawGiant(ctx, color) {
+    const headY = this.groundY - this.height;
+    const torsoTop = headY + 24;
+    ctx.fillStyle = color;
+    ctx.fillRect(-20, torsoTop, 40, 64);
+    ctx.beginPath();
+    ctx.arc(0, headY + 12, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 9;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-17, torsoTop + 16);
+    ctx.lineTo(-38, torsoTop + 55);
+    ctx.moveTo(17, torsoTop + 16);
+    ctx.lineTo(42, torsoTop + 48);
+    ctx.moveTo(-10, torsoTop + 62);
+    ctx.lineTo(-18, this.groundY);
+    ctx.moveTo(12, torsoTop + 62);
+    ctx.lineTo(25, this.groundY);
+    ctx.stroke();
+    ctx.strokeStyle = "#3f2a12";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(38, torsoTop + 45);
+    ctx.lineTo(60, torsoTop - 8);
+    ctx.stroke();
   }
 
   drawWeapon(ctx, bodyTop) {
@@ -268,7 +389,18 @@ export class Unit {
       return;
     }
 
-    if (this.type === "archer" || this.type === "mamon") {
+    if (this.type === "squire") {
+      ctx.fillStyle = "#cbd5e1";
+      ctx.fillRect(-25, bodyTop + 8, 18, 28);
+      ctx.strokeRect(-25, bodyTop + 8, 18, 28);
+      ctx.beginPath();
+      ctx.moveTo(14, bodyTop + 23);
+      ctx.lineTo(34, bodyTop + 13);
+      ctx.stroke();
+      return;
+    }
+
+    if (RANGED_TYPES.has(this.type)) {
       ctx.lineWidth = this.type === "mamon" ? 4 : 3;
       ctx.beginPath();
       ctx.arc(18, bodyTop + 18, this.type === "mamon" ? 18 : 15, -Math.PI / 2, Math.PI / 2);
@@ -294,7 +426,7 @@ export class Unit {
       return;
     }
 
-    const width = 38;
+    const width = Math.max(38, this.width);
     const x = this.x - width / 2;
     const y = this.groundY - this.height - 16;
     const ratio = Math.max(0, this.hp / this.maxHp);
