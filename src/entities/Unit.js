@@ -163,7 +163,8 @@ export class Unit {
 
   attack(target, context) {
     this.state = "attacking";
-    this.facing = target.kind === "statue" || target.x >= this.x ? 1 : -1;
+    const targetX = target.kind === "statue" ? target.frontX : target.x;
+    this.facing = targetX >= this.x ? 1 : -1;
 
     if (this.attackTimer > 0) {
       return;
