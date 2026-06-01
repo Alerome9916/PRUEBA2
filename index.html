@@ -11,13 +11,27 @@
       <canvas id="game-canvas"></canvas>
 
       <section id="hud" aria-label="Interfaz de juego">
-        <div class="resource-panel">Oro: <span id="gold-counter">500</span></div>
+        <div class="resource-panel">
+          <span>Oro: <strong id="gold-counter">500</strong></span>
+          <span>Base aliada: <strong id="player-hp">2000</strong></span>
+          <span>Base enemiga: <strong id="enemy-hp">2000</strong></span>
+          <span>Unidades A/E: <strong id="unit-counter">0 / 0</strong></span>
+        </div>
+
         <div class="command-panel" aria-label="Comandos generales">
           <button type="button" data-command="defend">Defender</button>
           <button type="button" data-command="hold">Mantener</button>
           <button type="button" data-command="attack">Atacar</button>
         </div>
+
+        <div class="train-panel" aria-label="Entrenamiento de unidades">
+          <button type="button" data-unit="miner">Minero 150</button>
+          <button type="button" data-unit="clubman">Swordwrath 125</button>
+          <button type="button" data-unit="archer">Archidon 300</button>
+        </div>
       </section>
+
+      <p id="status-message" aria-live="polite"></p>
     </main>
 
     <script type="module" src="./src/main.js"></script>

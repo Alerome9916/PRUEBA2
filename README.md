@@ -6,7 +6,7 @@ Base modular para un juego 2D side-scroller inspirado en Stick War, construido c
 
 ```text
 .
-├── index.html              # Entrada HTML y HUD basico
+├── index.html              # Entrada HTML, HUD y controles
 ├── styles/
 │   └── main.css            # Estilos de pantalla completa y UI
 └── src/
@@ -14,12 +14,15 @@ Base modular para un juego 2D side-scroller inspirado en Stick War, construido c
     ├── config.js           # Constantes globales
     ├── core/
     │   ├── Camera.js       # Camara horizontal con bordes/flechas
-    │   ├── Game.js         # Game loop, resize y render base
+    │   ├── Game.js         # Game loop, economia, IA y render base
     │   └── InputController.js
     ├── world/
     │   └── mapConfig.js    # Dimensiones del campo y posiciones clave
-    ├── entities/           # Futuras clases Unit, Miner, Archer, etc.
-    └── ui/                 # Futuros modulos HUD y comandos
+    ├── entities/
+    │   ├── Projectile.js   # Flechas con arco simple
+    │   ├── Statue.js       # Bases con HP
+    │   └── Unit.js         # Minero, Swordwrath y Archidon
+    └── ui/                 # Reservado para extraer HUD en siguientes pasos
 ```
 
 ## Ejecutar localmente
@@ -36,4 +39,6 @@ Luego abre `http://localhost:8000`.
 
 - Mueve el mouse a los bordes izquierdo/derecho de la pantalla para desplazar la camara.
 - Usa `Flecha izquierda`, `Flecha derecha`, `A` o `D` como alternativa.
-- El mapa mide 3 veces el ancho visible de la pantalla.
+- Entrena mineros, Swordwrath y Archidon desde el HUD.
+- Usa `Defender`, `Mantener` y `Atacar` para cambiar el comportamiento aliado global.
+- Destruye la estatua enemiga antes de que la IA destruya la tuya.

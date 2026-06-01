@@ -1,7 +1,10 @@
-import { COLORS, WORLD } from "../config.js";
+import { COLORS, COMMANDS, ECONOMY, FACTIONS, UNIT_TYPES, WORLD } from "../config.js";
 import { InputController } from "./InputController.js";
 import { Camera } from "./Camera.js";
 import { createBattlefield } from "../world/mapConfig.js";
+import { Projectile } from "../entities/Projectile.js";
+import { Statue } from "../entities/Statue.js";
+import { Unit } from "../entities/Unit.js";
 
 export class Game {
   constructor(canvas, hudElements = {}) {
@@ -9,7 +12,12 @@ export class Game {
     this.ctx = canvas.getContext("2d");
     this.hudElements = hudElements;
     this.gold = WORLD.playerGold;
-    this.currentCommand = "hold";
+    this.enemyGold = WORLD.enemyGold;
+    this.playerCommand = COMMANDS.hold;
+    this.enemyCommand = COMMANDS.hold;
+    this.statusMessage = "Entrena unidades, mina oro y destruye la base enemiga.";
+    this.statusTimer = 5;
+    this.gameOver = false;
 
     this.viewport = { width: 1, height: 1 };
     this.battlefield = createBattlefield(this.viewport.width, this.viewport.height);
@@ -19,11 +27,22 @@ export class Game {
     });
     this.input = new InputController(this.canvas);
 
+    this.units = [];
+    this.projectiles = [];
+    this.statues = null;
+    this.enemyTimers = {
+      miner: 4,
+      soldier: 6,
+      wave: ECONOMY.enemyWaveInterval,
+      waveActive: 0,
+    };
+
     this.lastFrameTime = 0;
     this.isRunning = false;
 
     this.bindUi();
     this.resize();
+    this.createInitialArmies();
     window.addEventListener("resize", () => this.resize());
   }
 
@@ -54,6 +73,71 @@ export class Game {
 
   update(deltaSeconds) {
     this.camera.update(deltaSeconds, this.input);
+
+    if (this.statusTimer > 0) {
+      this.statusTimer = Math.max(0, this.statusTimer - deltaSeconds);
+    }
+
+    if (!this.gameOver) {
+      this.updateEnemyAi(deltaSeconds);
+      this.updateUnits(deltaSeconds);
+      this.updateProjectiles(deltaSeconds);
+      this.cleanupEntities();
+      this.checkWinLose();
+    }
+
+    this.updateHud();
+  }
+
+  updateUnits(deltaSeconds) {
+    const context = this.createUnitContext();
+
+    for (const unit of this.units) {
+      unit.update(deltaSeconds, context);
+    }
+  }
+
+  updateProjectiles(deltaSeconds) {
+    for (const projectile of this.projectiles) {
+      projectile.update(deltaSeconds);
+    }
+  }
+
+  updateEnemyAi(deltaSeconds) {
+    this.enemyTimers.miner -= deltaSeconds;
+    this.enemyTimers.soldier -= deltaSeconds;
+    this.enemyTimers.wave -= deltaSeconds;
+
+    if (this.enemyTimers.miner <= 0) {
+      this.enemyTimers.miner = ECONOMY.enemyMinerInterval;
+      const enemyMiners = this.countUnits(FACTIONS.enemy, "miner");
+      if (enemyMiners < 4) {
+        this.trySpawnEnemyUnit("miner");
+      }
+    }
+
+    if (this.enemyTimers.soldier <= 0) {
+      this.enemyTimers.soldier = ECONOMY.enemySoldierInterval;
+      const type = Math.random() < 0.68 ? "clubman" : "archer";
+      this.trySpawnEnemyUnit(type);
+    }
+
+    if (this.enemyTimers.wave <= 0) {
+      this.enemyTimers.wave = ECONOMY.enemyWaveInterval;
+      this.enemyTimers.waveActive = ECONOMY.enemyWaveDuration;
+      this.enemyCommand = COMMANDS.attack;
+      this.setStatus("La IA enemiga lanza una oleada!", 4);
+      this.trySpawnEnemyUnit("clubman");
+      this.trySpawnEnemyUnit(Math.random() < 0.5 ? "clubman" : "archer");
+    }
+
+    if (this.enemyTimers.waveActive > 0) {
+      this.enemyTimers.waveActive = Math.max(0, this.enemyTimers.waveActive - deltaSeconds);
+      if (this.enemyTimers.waveActive === 0) {
+        this.enemyCommand = COMMANDS.hold;
+        this.assignHoldPositions(FACTIONS.enemy);
+      }
+    }
   }
 
   render() {
@@ -66,9 +150,11 @@ export class Game {
     ctx.save();
     ctx.translate(-this.camera.x, 0);
     this.drawBattlefield();
+    this.drawEntities();
     ctx.restore();
 
     this.drawCameraDebug();
+    this.drawStatusOverlay();
   }
 
   resize() {
@@ -87,28 +173,227 @@ export class Game {
       viewportWidth: width,
       worldWidth: this.battlefield.width,
     });
+
+    if (this.statues) {
+      this.statues.player.updateRect(this.battlefield.playerBase);
+      this.statues.enemy.updateRect(this.battlefield.enemyBase);
+      for (const unit of this.units) {
+        unit.groundY = this.battlefield.groundY;
+      }
+    }
+  }
+
+  createInitialArmies() {
+    this.statues = {
+      player: new Statue(FACTIONS.player, this.battlefield.playerBase),
+      enemy: new Statue(FACTIONS.enemy, this.battlefield.enemyBase),
+    };
+
+    this.spawnUnit("miner", FACTIONS.player);
+    this.spawnUnit("clubman", FACTIONS.player);
+    this.spawnUnit("miner", FACTIONS.enemy);
+    this.spawnUnit("clubman", FACTIONS.enemy);
+    this.assignHoldPositions(FACTIONS.player);
+    this.assignHoldPositions(FACTIONS.enemy);
   }
 
   bindUi() {
-    if (this.hudElements.goldCounter) {
-      this.hudElements.goldCounter.textContent = String(this.gold);
-    }
-
     for (const button of this.hudElements.commandButtons ?? []) {
       button.addEventListener("click", () => {
-        this.currentCommand = button.dataset.command;
-        this.updateCommandButtons();
+        this.setPlayerCommand(button.dataset.command);
+      });
+    }
+
+    for (const button of this.hudElements.trainButtons ?? []) {
+      button.addEventListener("click", () => {
+        this.trainPlayerUnit(button.dataset.unit);
       });
     }
 
     this.updateCommandButtons();
   }
 
+  setPlayerCommand(command) {
+    if (this.gameOver || !Object.values(COMMANDS).includes(command)) {
+      return;
+    }
+
+    this.playerCommand = command;
+    if (command === COMMANDS.hold) {
+      this.assignHoldPositions(FACTIONS.player);
+    }
+
+    this.updateCommandButtons();
+  }
+
+  trainPlayerUnit(type) {
+    const unitConfig = UNIT_TYPES[type];
+    if (this.gameOver || !unitConfig) {
+      return;
+    }
+
+    if (this.gold < unitConfig.cost) {
+      this.setStatus(`Oro insuficiente para ${unitConfig.label}.`, 1.8);
+      return;
+    }
+
+    this.gold -= unitConfig.cost;
+    this.spawnUnit(type, FACTIONS.player);
+    this.setStatus(`${unitConfig.label} aliado entrenado.`, 1.8);
+  }
+
+  trySpawnEnemyUnit(type) {
+    const unitConfig = UNIT_TYPES[type];
+    if (!unitConfig || this.enemyGold < unitConfig.cost) {
+      return false;
+    }
+
+    this.enemyGold -= unitConfig.cost;
+    const unit = this.spawnUnit(type, FACTIONS.enemy);
+    unit.holdPosition = this.battlefield.width - this.viewport.width * 0.82;
+    return true;
+  }
+
+  spawnUnit(type, faction) {
+    const alliedUnits = this.units.filter((unit) => unit.faction === faction).length;
+    const offset = (alliedUnits % 6) * 14;
+    const base = faction === FACTIONS.player ? this.battlefield.playerBase : this.battlefield.enemyBase;
+    const x = faction === FACTIONS.player
+      ? base.x + base.width + 45 + offset
+      : base.x - 45 - offset;
+
+    const unit = new Unit({
+      type,
+      faction,
+      x,
+      groundY: this.battlefield.groundY,
+      battlefield: this.battlefield,
+    });
+
+    if (faction === FACTIONS.player && this.playerCommand === COMMANDS.hold) {
+      unit.holdPosition = Math.max(unit.x, this.battlefield.centerX);
+    }
+
+    this.units.push(unit);
+    return unit;
+  }
+
+  assignHoldPositions(faction) {
+    for (const unit of this.units) {
+      if (unit.faction !== faction || unit.isMiner) {
+        continue;
+      }
+
+      unit.holdPosition = faction === FACTIONS.player
+        ? Math.max(unit.x, this.battlefield.centerX)
+        : Math.min(unit.x, this.battlefield.width - this.viewport.width * 0.82);
+    }
+  }
+
+  createUnitContext() {
+    return {
+      battlefield: this.battlefield,
+      units: this.units,
+      getCommand: (faction) => (faction === FACTIONS.player ? this.playerCommand : this.enemyCommand),
+      getMineWorkX: (faction) => (
+        faction === FACTIONS.player ? this.battlefield.playerMine.workX : this.battlefield.enemyMine.workX
+      ),
+      getDepositX: (faction) => {
+        const base = faction === FACTIONS.player ? this.battlefield.playerBase : this.battlefield.enemyBase;
+        return faction === FACTIONS.player ? base.x + base.width + 18 : base.x - 18;
+      },
+      getRallyX: (faction) => {
+        const base = faction === FACTIONS.player ? this.battlefield.playerBase : this.battlefield.enemyBase;
+        return faction === FACTIONS.player ? base.x + base.width + 35 : base.x - 35;
+      },
+      getEnemyStatue: (faction) => (faction === FACTIONS.player ? this.statues.enemy : this.statues.player),
+      addGold: (faction, amount) => this.addGold(faction, amount),
+      addProjectile: (source, target) => this.addProjectile(source, target),
+    };
+  }
+
+  addGold(faction, amount) {
+    if (amount <= 0) {
+      return;
+    }
+
+    if (faction === FACTIONS.player) {
+      this.gold += amount;
+    } else {
+      this.enemyGold += amount;
+    }
+  }
+
+  addProjectile(source, target) {
+    this.projectiles.push(new Projectile({
+      source,
+      target,
+      damage: source.damage,
+      speed: source.stats.projectileSpeed,
+    }));
+  }
+
+  cleanupEntities() {
+    this.units = this.units.filter((unit) => unit.isAlive);
+    this.projectiles = this.projectiles.filter((projectile) => !projectile.done);
+  }
+
+  checkWinLose() {
+    if (!this.statues.enemy.isAlive) {
+      this.gameOver = true;
+      this.setStatus("Victoria! La estatua enemiga ha caido.", Number.POSITIVE_INFINITY);
+      return;
+    }
+
+    if (!this.statues.player.isAlive) {
+      this.gameOver = true;
+      this.setStatus("Derrota. La estatua aliada ha sido destruida.", Number.POSITIVE_INFINITY);
+    }
+  }
+
+  countUnits(faction, type = null) {
+    return this.units.filter((unit) => unit.faction === faction && (!type || unit.type === type)).length;
+  }
+
+  updateHud() {
+    if (this.hudElements.goldCounter) {
+      this.hudElements.goldCounter.textContent = String(Math.floor(this.gold));
+    }
+
+    if (this.hudElements.playerHp) {
+      this.hudElements.playerHp.textContent = String(Math.ceil(this.statues?.player.hp ?? WORLD.statueHp));
+    }
+
+    if (this.hudElements.enemyHp) {
+      this.hudElements.enemyHp.textContent = String(Math.ceil(this.statues?.enemy.hp ?? WORLD.statueHp));
+    }
+
+    if (this.hudElements.unitCounter) {
+      const playerUnits = this.countUnits(FACTIONS.player);
+      const enemyUnits = this.countUnits(FACTIONS.enemy);
+      this.hudElements.unitCounter.textContent = `${playerUnits} / ${enemyUnits}`;
+    }
+
+    if (this.hudElements.status) {
+      this.hudElements.status.textContent = this.statusTimer > 0 || this.gameOver ? this.statusMessage : "";
+    }
+
+    for (const button of this.hudElements.trainButtons ?? []) {
+      const unitConfig = UNIT_TYPES[button.dataset.unit];
+      button.disabled = this.gameOver || !unitConfig || this.gold < unitConfig.cost;
+    }
+  }
+
   updateCommandButtons() {
     for (const button of this.hudElements.commandButtons ?? []) {
-      const isActive = button.dataset.command === this.currentCommand;
+      const isActive = button.dataset.command === this.playerCommand;
       button.setAttribute("aria-pressed", String(isActive));
     }
+  }
+
+  setStatus(message, seconds = 2) {
+    this.statusMessage = message;
+    this.statusTimer = seconds;
   }
 
   drawSky() {
@@ -131,8 +416,8 @@ export class Game {
 
     this.drawMine(battlefield.playerMine);
     this.drawMine(battlefield.enemyMine);
-    this.drawStatue(battlefield.playerBase, COLORS.playerBase, "Base aliada");
-    this.drawStatue(battlefield.enemyBase, COLORS.enemyBase, "Base enemiga");
+    this.statues.player.draw(ctx);
+    this.statues.enemy.draw(ctx);
   }
 
   drawWorldGuides() {
@@ -156,21 +441,14 @@ export class Game {
     ctx.restore();
   }
 
-  drawStatue(statue, color, label) {
-    const { ctx } = this;
-    const centerX = statue.x + statue.width / 2;
+  drawEntities() {
+    for (const unit of [...this.units].sort((a, b) => a.x - b.x)) {
+      unit.draw(this.ctx);
+    }
 
-    ctx.fillStyle = color;
-    ctx.fillRect(statue.x, statue.y, statue.width, statue.height);
-    ctx.fillStyle = "rgba(17, 24, 39, 0.55)";
-    ctx.fillRect(statue.x - 12, statue.y + statue.height - 18, statue.width + 24, 18);
-
-    ctx.fillStyle = "#f9fafb";
-    ctx.font = "16px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(label, centerX, statue.y - 14);
-    ctx.fillText(`${statue.hp} HP`, centerX, statue.y + statue.height + 28);
-    ctx.textAlign = "left";
+    for (const projectile of this.projectiles) {
+      projectile.draw(this.ctx);
+    }
   }
 
   drawMine(mine) {
@@ -192,6 +470,12 @@ export class Game {
     ctx.strokeStyle = "#92400e";
     ctx.lineWidth = 3;
     ctx.stroke();
+
+    ctx.fillStyle = "rgba(17, 24, 39, 0.7)";
+    ctx.font = "13px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Oro", mine.x + mine.width / 2, mine.y - 8);
+    ctx.textAlign = "left";
   }
 
   drawCameraDebug() {
@@ -206,11 +490,28 @@ export class Game {
     ctx.fillRect(x - 8, y - 12, barWidth + 16, 30);
     ctx.fillStyle = "rgba(249, 250, 251, 0.35)";
     ctx.fillRect(x, y, barWidth, barHeight);
-    ctx.fillStyle = "#facc15";
+    ctx.fillStyle = COLORS.gold;
     ctx.fillRect(x, y, barWidth * progress, barHeight);
 
     ctx.fillStyle = "#f9fafb";
     ctx.font = "12px Arial";
-    ctx.fillText("Camara: mouse en bordes o flechas", x, y - 4);
+    ctx.fillText("Camara: mouse en bordes, flechas o A/D", x, y - 4);
+  }
+
+  drawStatusOverlay() {
+    if (!this.gameOver) {
+      return;
+    }
+
+    const { ctx } = this;
+    ctx.fillStyle = "rgba(17, 24, 39, 0.62)";
+    ctx.fillRect(0, 0, this.viewport.width, this.viewport.height);
+    ctx.fillStyle = "#f9fafb";
+    ctx.font = "bold 42px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(this.statusMessage, this.viewport.width / 2, this.viewport.height / 2);
+    ctx.font = "18px Arial";
+    ctx.fillText("Recarga la pagina para jugar otra vez.", this.viewport.width / 2, this.viewport.height / 2 + 38);
+    ctx.textAlign = "left";
   }
 }

@@ -10,6 +10,7 @@ export function createBattlefield(viewportWidth, viewportHeight) {
     width,
     height: viewportHeight,
     groundY,
+    centerX: width / 2,
     playerBase: {
       x: 80,
       y: groundY - statueHeight,
@@ -29,12 +30,14 @@ export function createBattlefield(viewportWidth, viewportHeight) {
       y: groundY - 58,
       width: 120,
       height: 58,
+      workX: 290,
     },
     enemyMine: {
       x: width - 350,
       y: groundY - 58,
       width: 120,
       height: 58,
+      workX: width - 290,
     },
   };
 }
