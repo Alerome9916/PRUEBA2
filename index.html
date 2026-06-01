@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Side Strategy Prototype</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <main id="game-root" aria-label="Prototipo de estrategia lateral">
+      <canvas id="game-canvas"></canvas>
+
+      <section id="hud" aria-label="Interfaz de juego">
+        <div class="resource-panel">Oro: <span id="gold-counter">500</span></div>
+        <div class="command-panel" aria-label="Comandos generales">
+          <button type="button" data-command="defend">Defender</button>
+          <button type="button" data-command="hold">Mantener</button>
+          <button type="button" data-command="attack">Atacar</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
