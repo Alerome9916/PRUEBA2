@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from los_churuguaros.system import CharcuteriaSystem
 
@@ -35,7 +35,7 @@ class CharcuteriaSystemTests(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def _receive_lot(self, lot_code: str, expiry_offset_days: int, quantity: float) -> int:
-        today = datetime.utcnow().date()
+        today = datetime.now(UTC).date()
         return self.system.receive_lot(
             product_id=self.product_id,
             supplier_id=self.supplier_id,
@@ -65,7 +65,7 @@ class CharcuteriaSystemTests(unittest.TestCase):
         self.assertEqual(allocations[1]["quantity"], 2)
 
     def test_expired_lot_cannot_be_sold(self) -> None:
-        today = datetime.utcnow().date()
+        today = datetime.now(UTC).date()
         self.system.receive_lot(
             product_id=self.product_id,
             supplier_id=self.supplier_id,

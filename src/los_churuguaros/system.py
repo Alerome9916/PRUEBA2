@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from .compliance import DATE_FMT, ComplianceIssue, VenezuelaComplianceProfile
@@ -21,10 +21,10 @@ class CharcuteriaSystem:
         return connect(self.db_path)
 
     def _now(self) -> str:
-        return datetime.utcnow().replace(microsecond=0).isoformat()
+        return datetime.now(UTC).replace(microsecond=0).isoformat()
 
     def _today(self) -> date:
-        return datetime.utcnow().date()
+        return datetime.now(UTC).date()
 
     def _insert_alert(
         self,
