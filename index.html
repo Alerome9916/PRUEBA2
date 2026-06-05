@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Los Churuguaros | Inventario FEFO</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Sistema integral de charcuteria</p>
+          <h1>Los Churuguaros</h1>
+          <p class="hero-copy">
+            Inventario por lotes, caducidad FEFO, control sanitario, trazabilidad y contingencia electrica
+            con enfoque operativo para Venezuela.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-chip">FEFO activo</div>
+          <div class="hero-chip">Cumplimiento sanitario</div>
+          <div class="hero-chip">Radar anti-merma</div>
+          <div class="hero-chip">Contingencia electrica</div>
+        </div>
+      </header>
+
+      <nav class="module-nav">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#inventario">Inventario FEFO</a>
+        <a href="#cumplimiento">Cumplimiento</a>
+        <a href="#contingencia">Contingencia</a>
+        <a href="#trazabilidad">Trazabilidad</a>
+        <a href="#reportes">Reportes</a>
+      </nav>
+
+      <main>
+        <section id="dashboard" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Modulo 1</p>
+              <h2>Panel ejecutivo</h2>
+            </div>
+            <p class="section-copy">
+              Resumen operativo en tiempo real con riesgo FEFO, cumplimiento y acciones sugeridas.
+            </p>
+          </div>
+          <div class="metric-grid" data-render="metrics"></div>
+          <div class="two-column">
+            <article class="subpanel">
+              <div class="subpanel-heading">
+                <h3>Motor de novedad: Radar anti-merma y contingencia</h3>
+                <p>Recomendaciones que combinan vencimiento, rotacion y exposicion termica.</p>
+              </div>
+              <div data-render="novelty"></div>
+            </article>
+            <article class="subpanel">
+              <div class="subpanel-heading">
+                <h3>Salud de zonas frias</h3>
+                <p>Temperatura, limpieza y estado comercial por area.</p>
+              </div>
+              <div data-render="zones"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Modulo 2</p>
+              <h2>Centro de captura operativa</h2>
+            </div>
+            <p class="section-copy">
+              Registra lotes, temperaturas, limpieza y fallas electricas sin salir de la vista principal.
+            </p>
+          </div>
+          <div class="forms-grid">
+            <form id="lot-form" class="card-form">
+              <h3>Registrar lote</h3>
+              <label>
+                Producto
+                <select name="productId" id="lot-product"></select>
+              </label>
+              <label>
+                Proveedor
+                <select name="supplierId" id="lot-supplier"></select>
+              </label>
+              <label>
+                Zona fria
+                <select name="zone" id="lot-zone"></select>
+              </label>
+              <div class="form-row">
+                <label>
+                  Cantidad kg
+                  <input type="number" name="quantityKg" min="0.1" step="0.1" required />
+                </label>
+                <label>
+                  Reservado kg
+                  <input type="number" name="reservedKg" min="0" step="0.1" value="0" />
+                </label>
+              </div>
+              <div class="form-row">
+                <label>
+                  Recepcion
+                  <input type="date" name="receivedAt" required />
+                </label>
+                <label>
+                  Caducidad
+                  <input type="date" name="expiryAt" required />
+                </label>
+              </div>
+              <label>
+                Fecha de apertura (opcional)
+                <input type="date" name="openedAt" />
+              </label>
+              <div class="form-row compact-checks">
+                <label class="checkbox-line"><input type="checkbox" name="sanitaryPermit" checked /> Permiso sanitario verificado</label>
+                <label class="checkbox-line"><input type="checkbox" name="labelCheck" checked /> Rotulado conforme</label>
+              </div>
+              <button type="submit">Guardar lote</button>
+            </form>
+
+            <form id="temperature-form" class="card-form">
+              <h3>Registrar temperatura</h3>
+              <label>
+                Zona
+                <select name="zone" id="temp-zone"></select>
+              </label>
+              <div class="form-row">
+                <label>
+                  Temperatura C
+                  <input type="number" name="temperatureC" step="0.1" required />
+                </label>
+                <label>
+                  Humedad %
+                  <input type="number" name="humidity" step="1" min="0" max="100" value="75" />
+                </label>
+              </div>
+              <label>
+                Fecha y hora
+                <input type="datetime-local" name="recordedAt" required />
+              </label>
+              <button type="submit">Registrar lectura</button>
+            </form>
+
+            <form id="cleaning-form" class="card-form">
+              <h3>Planificar limpieza</h3>
+              <label>
+                Zona
+                <select name="zone" id="clean-zone"></select>
+              </label>
+              <label>
+                Actividad
+                <input type="text" name="task" value="Sanitizacion de superficies" required />
+              </label>
+              <label>
+                Responsable
+                <input type="text" name="owner" value="Equipo de turno" required />
+              </label>
+              <label>
+                Vence
+                <input type="datetime-local" name="dueAt" required />
+              </label>
+              <button type="submit">Crear tarea</button>
+            </form>
+
+            <form id="outage-form" class="card-form accent-form">
+              <h3>Registrar contingencia electrica</h3>
+              <label>
+                Zona afectada
+                <select name="zone" id="outage-zone"></select>
+              </label>
+              <div class="form-row">
+                <label>
+                  Inicio
+                  <input type="datetime-local" name="startedAt" required />
+                </label>
+                <label>
+                  Fin
+                  <input type="datetime-local" name="endedAt" required />
+                </label>
+              </div>
+              <div class="form-row">
+                <label>
+                  Temperatura maxima C
+                  <input type="number" name="maxTemperatureC" step="0.1" required />
+                </label>
+                <label>
+                  Nota
+                  <input type="text" name="note" value="Corte de energia" />
+                </label>
+              </div>
+              <button type="submit">Evaluar contingencia</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="inventario" class="panel">
+          <div class="section-heading split-heading">
+            <div>
+              <p class="section-kicker">Modulo 3 y 4</p>
+              <h2>Inventario por lotes y FEFO</h2>
+            </div>
+            <label class="inline-filter">
+              Filtrar producto
+              <select id="inventory-filter"></select>
+            </label>
+          </div>
+          <div class="two-column">
+            <article class="subpanel wide-table">
+              <div class="subpanel-heading">
+                <h3>Lotes activos</h3>
+                <p>Ordenados por criticidad comercial y sanitaria.</p>
+              </div>
+              <div data-render="inventory"></div>
+            </article>
+            <article class="subpanel">
+              <div class="subpanel-heading">
+                <h3>Simulador de despacho FEFO</h3>
+                <p>Asignacion automatica del despacho usando prioridad por fecha de vencimiento.</p>
+              </div>
+              <form id="dispatch-form" class="card-form compact-form no-background">
+                <label>
+                  Producto
+                  <select name="productId" id="dispatch-product"></select>
+                </label>
+                <label>
+                  Cantidad a despachar kg
+                  <input type="number" name="quantityKg" min="0.1" step="0.1" value="6" required />
+                </label>
+                <button type="submit">Calcular salida FEFO</button>
+              </form>
+              <div data-render="dispatch"></div>
+            </article>
+          </div>
+          <article class="subpanel margin-top">
+            <div class="subpanel-heading">
+              <h3>Centro de alertas de caducidad</h3>
+              <p>Semaforo comercial para productos por vencer, en hold o no comercializables.</p>
+            </div>
+            <div data-render="alerts"></div>
+          </article>
+        </section>
+
+        <section id="cumplimiento" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Modulo 5</p>
+              <h2>Cumplimiento sanitario y documental</h2>
+            </div>
+            <p class="section-copy">
+              Reglas operativas inspiradas en Reglamento General de Alimentos, COVENIN 2952:2001 y BPM de almacenamiento.
+            </p>
+          </div>
+          <div data-render="compliance"></div>
+        </section>
+
+        <section id="contingencia" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Modulo 6</p>
+              <h2>Contingencia electrica y cadena de frio</h2>
+            </div>
+            <p class="section-copy">
+              Modulo diferencial: estima cuarentenas preventivas por cortes electricos y desviaciones termicas.
+            </p>
+          </div>
+          <div data-render="outages"></div>
+        </section>
+
+        <section id="trazabilidad" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Modulo 7</p>
+              <h2>Trazabilidad y retiros</h2>
+            </div>
+            <p class="section-copy">
+              Seguimiento por lote, proveedor, factura y estado de retiro preventivo o cierre documental.
+            </p>
+          </div>
+          <div data-render="traceability"></div>
+        </section>
+
+        <section id="reportes" class="panel">
+          <div class="section-heading split-heading">
+            <div>
+              <p class="section-kicker">Modulo 8</p>
+              <h2>Reportes y respaldo operativo</h2>
+            </div>
+            <div class="button-row">
+              <button id="export-inventory" class="secondary-button">Exportar inventario CSV</button>
+              <button id="export-alerts" class="secondary-button">Exportar alertas CSV</button>
+              <button id="reset-data" class="danger-button">Restaurar demo</button>
+            </div>
+          </div>
+          <div data-render="reports"></div>
+          <div class="legal-panel">
+            <h3>Base regulatoria cargada en el sistema</h3>
+            <ul>
+              <li>Reglamento General de Alimentos, Gaceta Oficial N. 25.864, art. 37 sobre rotulado, fecha de expiracion y conservacion.</li>
+              <li>Norma COVENIN 2952:2001, numeral 3.25 y seccion 5.2.2.8 sobre fecha de vencimiento, expiracion o caducidad.</li>
+              <li>Normas de Buenas Practicas de Fabricacion, Almacenamiento y Transporte de Alimentos, Gaceta Oficial N. 36.081.</li>
+              <li>Marco de calidad y normalizacion coordinado por SENCAMER; validacion sanitaria del establecimiento ante autoridad competente.</li>
+            </ul>
+            <p>
+              Nota: la app entrega criterios operativos y alertas preventivas. La configuracion final debe validarse con el responsable sanitario,
+              permisos del establecimiento y fichas tecnicas del fabricante de cada producto.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
