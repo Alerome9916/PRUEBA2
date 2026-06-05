@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Inventario valorizado{% endblock %}
+{% block content %}
+<h1 class="section-title">📦 Inventario valorizado</h1>
+<div class="toolbar">
+  <span class="badge badge-success">Valor total: {{ valor_total|bs }}</span>
+</div>
+<table class="table">
+  <thead><tr><th>Producto</th><th>Categoría</th><th class="text-right">Stock</th><th class="text-right">Costo unit.</th><th class="text-right">Valor</th></tr></thead>
+  <tbody>
+    {% for f in filas %}
+      <tr>
+        <td>{{ f.producto.nombre }}</td>
+        <td>{{ f.producto.categoria.nombre if f.producto.categoria else '-' }}</td>
+        <td class="text-right">{{ '%.2f' % f.stock }}</td>
+        <td class="text-right">{{ f.producto.precio_compra|bs }}</td>
+        <td class="text-right">{{ f.valor|bs }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+<h1 class="section-title">📊 Reportes</h1>
+
+<div class="kpi-grid">
+  <a class="kpi" href="{{ url_for('reportes.ventas') }}" style="text-decoration:none;">
+    <div class="label">Ventas</div>
+    <div class="value">💵</div>
+    <div class="sub">Por período, top productos, IVA, IGTF</div>
+  </a>
+  <a class="kpi kpi-accent" href="{{ url_for('reportes.vencimientos') }}" style="text-decoration:none;">
+    <div class="label">Vencimientos</div>
+    <div class="value">📅</div>
+    <div class="sub">Lotes por semáforo FEFO</div>
+  </a>
+  <a class="kpi kpi-warning" href="{{ url_for('reportes.mermas') }}" style="text-decoration:none;">
+    <div class="label">Mermas</div>
+    <div class="value">🗑️</div>
+    <div class="sub">Pérdidas por motivo</div>
+  </a>
+  <a class="kpi" href="{{ url_for('reportes.inventario') }}" style="text-decoration:none;">
+    <div class="label">Inventario valorizado</div>
+    <div class="value">📦</div>
+    <div class="sub">Stock × costo</div>
+  </a>
+  <a class="kpi kpi-success" href="{{ url_for('reportes.sanitario') }}" style="text-decoration:none;">
+    <div class="label">Sanitario</div>
+    <div class="value">🌡️</div>
+    <div class="sub">Histórico de cadena de frío</div>
+  </a>
+</div>
+{% endblock %}

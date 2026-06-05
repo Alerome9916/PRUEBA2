@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Ingreso de mercancía{% endblock %}
+{% block content %}
+<h1 class="section-title">⬇️ Ingreso de mercancía (nuevo lote)</h1>
+<p class="section-subtitle">Cada ingreso genera un lote con su fecha de vencimiento y un QR de trazabilidad sanitaria.</p>
+
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Producto *</label>
+      <select name="producto_id" required>
+        <option value="">— Seleccione —</option>
+        {% for p in productos %}
+          <option value="{{ p.id }}">{{ p.nombre }} ({{ p.codigo }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Proveedor</label>
+      <select name="proveedor_id">
+        <option value="">— Ninguno —</option>
+        {% for pr in proveedores %}
+          <option value="{{ pr.id }}">{{ pr.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Código de lote (opcional)</label>
+      <input type="text" name="codigo" placeholder="Se autogenera si lo deja vacío">
+    </div>
+    <div class="form-group">
+      <label>Fecha elaboración</label>
+      <input type="date" name="fecha_elaboracion" max="{{ hoy }}">
+    </div>
+    <div class="form-group">
+      <label>Fecha vencimiento *</label>
+      <input type="date" name="fecha_vencimiento" required min="{{ hoy }}">
+    </div>
+    <div class="form-group">
+      <label>Cantidad *</label>
+      <input type="number" step="0.001" name="cantidad" required>
+    </div>
+    <div class="form-group">
+      <label>Costo unitario (Bs)</label>
+      <input type="number" step="0.01" name="costo_unitario">
+    </div>
+    <div class="form-group">
+      <label>Temperatura recepción (°C)</label>
+      <input type="number" step="0.1" name="temperatura_recepcion">
+    </div>
+    <div class="form-group">
+      <label>Documento sanitario / permiso INSAI</label>
+      <input type="text" name="documento_sanitario">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top:14px;">
+    <label>Observaciones</label>
+    <textarea name="observaciones"></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="submit">Registrar ingreso</button>
+    <a class="btn btn-secondary" href="{{ url_for('inventario.listar') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

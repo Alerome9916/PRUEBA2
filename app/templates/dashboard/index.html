@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Tablero{% endblock %}
+{% block content %}
+
+<div class="novedad-banner">
+  <div>
+    <h2>⚡ Score de Frescura del Inventario: {{ score.score }}/100</h2>
+    <p>{{ score.total }} lotes activos · 🟢 {{ score.ok + score.verde }} · 🟡 {{ score.amarillo }} · 🔴 {{ score.rojo }} · ⚫ {{ score.vencido }}</p>
+  </div>
+  <a href="{{ url_for('novedad.panel') }}" class="btn btn-accent">Abrir FEFO Inteligente</a>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-success">
+    <div class="label">Ventas hoy</div>
+    <div class="value">{{ ventas_hoy|bs }}</div>
+    <div class="sub">{{ (ventas_hoy / (tasa_bcv or 1))|usd }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Ventas 30 días</div>
+    <div class="value">{{ ventas_mes|bs }}</div>
+  </div>
+  <div class="kpi kpi-accent">
+    <div class="label">Productos activos</div>
+    <div class="value">{{ total_productos }}</div>
+    <div class="sub">{{ total_lotes }} lotes en stock</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Clientes</div>
+    <div class="value">{{ total_clientes }}</div>
+  </div>
+  <div class="kpi kpi-danger">
+    <div class="label">Lotes en rojo (≤3 días)</div>
+    <div class="value">{{ lotes_rojo|length }}</div>
+    <div class="sub">+ {{ lotes_vencidos|length }} vencidos</div>
+  </div>
+  <div class="kpi kpi-warning">
+    <div class="label">Lotes en amarillo (≤7 días)</div>
+    <div class="value">{{ lotes_amarillo|length }}</div>
+    <div class="sub">Valor en riesgo: {{ valor_riesgo|bs }}</div>
+  </div>
+  <div class="kpi kpi-danger">
+    <div class="label">Mermas (30 días)</div>
+    <div class="value">{{ mermas_mes|bs }}</div>
+  </div>
+  <div class="kpi kpi-warning">
+    <div class="label">Productos bajo mínimo</div>
+    <div class="value">{{ bajo_stock|length }}</div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card" style="flex: 2;">
+    <div class="card-title">
+      <span>🔴 Lotes críticos (próximos a vencer)</span>
+      <a href="{{ url_for('alertas.index') }}" class="badge badge-primary">Ver todos</a>
+    </div>
+    {% if lotes_rojo or lotes_amarillo %}
+    <table class="table">
+      <thead><tr>
+        <th>Lote</th><th>Producto</th><th>Vence</th><th>Días</th>
+        <th class="text-right">Stock</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        {% for l in (lotes_rojo + lotes_amarillo)[:10] %}
+        <tr>
+          <td><a href="{{ url_for('inventario.detalle_lote', id=l.id) }}">{{ l.codigo }}</a></td>
+          <td>{{ l.producto.nombre }}</td>
+          <td>{{ l.fecha_vencimiento|fecha }}</td>
+          <td>{{ l.dias_para_vencer() }}</td>
+          <td class="text-right">{{ '%.2f' % l.cantidad_actual }}</td>
+          <td><span class="sem sem-{{ l.estado_semaforo() }}">{{ l.estado_semaforo() }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="muted">No hay lotes en estado crítico. ¡Inventario saludable!</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚡ Combos sugeridos (anti-desperdicio)</div>
+    {% if combos %}
+      {% for c in combos %}
+        <div style="border-bottom:1px solid var(--border); padding: 10px 0;">
+          <strong>{{ c.nombre }}</strong>
+          <div class="small">{{ c.productos }}</div>
+          <div style="margin-top:4px;">
+            <span class="badge badge-accent">{{ '%.2f Bs' % c.precio_combo }}</span>
+            <span class="badge badge-success">Ahorra {{ '%.2f Bs' % c.ahorro }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No hay productos próximos a vencer.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if bajo_stock %}
+<div class="card">
+  <div class="card-title">📉 Productos bajo stock mínimo</div>
+  <div class="gap-12">
+    {% for p in bajo_stock %}
+      <span class="badge">{{ p.nombre }} ({{ '%.2f' % p.stock_total() }} {{ p.unidad.codigo if p.unidad else '' }})</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if p else 'Nuevo' }} proveedor{% endblock %}
+{% block content %}
+<h1 class="section-title">{{ 'Editar' if p else 'Nuevo' }} proveedor</h1>
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>RIF *</label>
+      <input type="text" name="rif" required value="{{ p.rif if p else '' }}" placeholder="J-12345678-9">
+    </div>
+    <div class="form-group">
+      <label>Razón social *</label>
+      <input type="text" name="nombre" required value="{{ p.nombre if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Contacto</label>
+      <input type="text" name="contacto" value="{{ p.contacto if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Teléfono</label>
+      <input type="tel" name="telefono" value="{{ p.telefono if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email" value="{{ p.email if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Registro sanitario INSAI</label>
+      <input type="text" name="registro_sanitario" value="{{ p.registro_sanitario if p else '' }}">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top:14px;">
+    <label>Dirección</label>
+    <textarea name="direccion">{{ p.direccion if p else '' }}</textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn-secondary" href="{{ url_for('proveedores.listar') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

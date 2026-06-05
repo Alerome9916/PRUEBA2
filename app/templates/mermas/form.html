@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Registrar merma{% endblock %}
+{% block content %}
+<h1 class="section-title">Registrar merma / baja sanitaria</h1>
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Lote *</label>
+      <select name="lote_id" required>
+        {% for l in lotes %}
+          <option value="{{ l.id }}">
+            {{ l.codigo }} - {{ l.producto.nombre }}
+            (stock: {{ '%.2f' % l.cantidad_actual }}, vence {{ l.fecha_vencimiento|fecha }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cantidad *</label>
+      <input type="number" step="0.001" name="cantidad" required>
+    </div>
+    <div class="form-group">
+      <label>Motivo *</label>
+      <select name="motivo" required>
+        <option value="vencido">Vencido</option>
+        <option value="dañado">Dañado</option>
+        <option value="rotura_frio">Rotura de cadena de frío</option>
+        <option value="contaminacion">Contaminación / mal estado</option>
+        <option value="devolucion">Devolución de cliente</option>
+        <option value="ajuste">Ajuste de inventario</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group" style="margin-top:14px;">
+    <label>Observaciones</label>
+    <textarea name="observaciones"></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-danger" type="submit">Registrar merma</button>
+    <a class="btn btn-secondary" href="{{ url_for('mermas.listar') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

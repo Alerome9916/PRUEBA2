@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}{{ p.nombre }}{% endblock %}
+{% block content %}
+<h1 class="section-title">🧀 {{ p.nombre }}</h1>
+<p class="section-subtitle">SKU <code>{{ p.codigo }}</code> · {{ p.categoria.nombre if p.categoria else '' }}</p>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Precio venta</div><div class="value">{{ p.precio_venta|bs }}</div></div>
+  <div class="kpi"><div class="label">IVA</div><div class="value">{{ (p.iva_alicuota * 100)|int }}%</div></div>
+  <div class="kpi"><div class="label">Stock total</div><div class="value">{{ '%.2f' % p.stock_total() }}</div></div>
+  <div class="kpi"><div class="label">Vida útil</div><div class="value">{{ p.vida_util_dias }}d</div></div>
+  <div class="kpi"><div class="label">Velocidad de venta</div><div class="value">{{ '%.2f' % p.velocidad_consumo_diaria() }}/día</div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Lotes FEFO (orden por vencimiento ASC)</div>
+  <table class="table">
+    <thead><tr>
+      <th>Código</th><th>Ingreso</th><th>Vence</th><th>Días</th>
+      <th class="text-right">Stock</th>
+      <th class="text-right">Precio dinámico</th>
+      <th>Estado</th><th>QR</th>
+    </tr></thead>
+    <tbody>
+      {% for l in lotes %}
+        <tr>
+          <td><a href="{{ url_for('inventario.detalle_lote', id=l.id) }}">{{ l.codigo }}</a></td>
+          <td>{{ l.fecha_ingreso|fecha }}</td>
+          <td>{{ l.fecha_vencimiento|fecha }}</td>
+          <td>{{ l.dias_para_vencer() }}</td>
+          <td class="text-right">{{ '%.2f' % l.cantidad_actual }}</td>
+          <td class="text-right">{{ l.precio_dinamico()|bs }}</td>
+          <td><span class="sem sem-{{ l.estado_semaforo() }}">{{ l.estado_semaforo() }}</span></td>
+          <td>{% if l.qr_path %}<a href="{{ url_for('static', filename=l.qr_path) }}" target="_blank">QR</a>{% endif %}</td>
+        </tr>
+      {% else %}
+        <tr class="muted-row"><td colspan="8">Sin lotes registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

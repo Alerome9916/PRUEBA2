@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block content %}
+<h1 class="section-title">🚚 Proveedores</h1>
+<form method="get" class="toolbar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o RIF">
+  <button class="btn btn-secondary">Buscar</button>
+  <div class="spacer"></div>
+  {% if current_user.tiene_rol('admin', 'almacen') %}
+    <a class="btn" href="{{ url_for('proveedores.nuevo') }}">+ Nuevo proveedor</a>
+  {% endif %}
+</form>
+<table class="table">
+  <thead><tr>
+    <th>RIF</th><th>Razón social</th><th>Contacto</th>
+    <th>Teléfono</th><th>Registro sanitario</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for p in proveedores %}
+      <tr>
+        <td><code>{{ p.rif }}</code></td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.contacto or '-' }}</td>
+        <td>{{ p.telefono or '-' }}</td>
+        <td>{{ p.registro_sanitario or '-' }}</td>
+        <td>
+          {% if current_user.tiene_rol('admin','almacen') %}
+          <a class="btn btn-sm btn-secondary" href="{{ url_for('proveedores.editar', id=p.id) }}">Editar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr class="muted-row"><td colspan="6">Sin proveedores.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

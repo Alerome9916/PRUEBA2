@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<h1 class="section-title">🔐 Usuarios del sistema</h1>
+<div class="toolbar">
+  <div class="spacer"></div>
+  <a class="btn" href="{{ url_for('usuarios.nuevo') }}">+ Nuevo usuario</a>
+</div>
+<table class="table">
+  <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Email</th><th>Activo</th><th></th></tr></thead>
+  <tbody>
+    {% for u in usuarios %}
+      <tr>
+        <td><code>{{ u.usuario }}</code></td>
+        <td>{{ u.nombre }}</td>
+        <td><span class="badge badge-primary">{{ u.rol }}</span></td>
+        <td>{{ u.email or '-' }}</td>
+        <td>{% if u.activo %}<span class="badge badge-success">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
+        <td><a href="{{ url_for('usuarios.editar', id=u.id) }}" class="btn btn-sm btn-secondary">Editar</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

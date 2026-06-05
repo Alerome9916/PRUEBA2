@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Mermas{% endblock %}
+{% block content %}
+<h1 class="section-title">🗑️ Mermas y bajas sanitarias</h1>
+<div class="toolbar">
+  <span class="badge badge-danger">Pérdida total: {{ total|bs }}</span>
+  <div class="spacer"></div>
+  {% if current_user.tiene_rol('admin','almacen','sanitario') %}
+    <form method="post" action="{{ url_for('mermas.baja_automatica') }}"
+          onsubmit="return confirm('¿Dar de baja TODOS los lotes vencidos? Esta acción es definitiva.')">
+      <button class="btn btn-warning">⚡ Baja automática de vencidos</button>
+    </form>
+    <a class="btn" href="{{ url_for('mermas.nueva') }}">+ Nueva merma</a>
+  {% endif %}
+</div>
+
+<table class="table">
+  <thead><tr>
+    <th>Fecha</th><th>Producto</th><th>Lote</th>
+    <th class="text-right">Cantidad</th><th>Motivo</th>
+    <th class="text-right">Pérdida</th><th>Usuario</th>
+  </tr></thead>
+  <tbody>
+    {% for m in mermas %}
+      <tr>
+        <td>{{ m.fecha|fechahora }}</td>
+        <td>{{ m.producto.nombre }}</td>
+        <td><code>{{ m.lote.codigo if m.lote else '-' }}</code></td>
+        <td class="text-right">{{ '%.2f' % m.cantidad }}</td>
+        <td><span class="badge">{{ m.motivo }}</span></td>
+        <td class="text-right danger-text">{{ m.valor_perdido|bs }}</td>
+        <td>{{ m.usuario.nombre if m.usuario else '-' }}</td>
+      </tr>
+    {% else %}
+      <tr class="muted-row"><td colspan="7">Sin mermas registradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

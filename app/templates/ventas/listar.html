@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Ventas{% endblock %}
+{% block content %}
+<h1 class="section-title">💵 Historial de ventas</h1>
+
+<form method="get" class="toolbar">
+  <label>Desde <input type="date" name="desde" value="{{ desde or '' }}"></label>
+  <label>Hasta <input type="date" name="hasta" value="{{ hasta or '' }}"></label>
+  <button class="btn btn-secondary">Filtrar</button>
+  <div class="spacer"></div>
+  <span class="badge badge-success">Total mostrado: {{ total|bs }}</span>
+  <a class="btn" href="{{ url_for('ventas.pos') }}">+ Nueva venta</a>
+</form>
+
+<table class="table">
+  <thead><tr>
+    <th>N° factura</th><th>Fecha</th><th>Cliente</th><th>Cajero</th>
+    <th>Método</th>
+    <th class="text-right">Total Bs</th><th class="text-right">USD</th><th>Estado</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for v in ventas %}
+      <tr {% if v.anulada %}style="opacity:.5;"{% endif %}>
+        <td><code>{{ v.numero_factura }}</code></td>
+        <td>{{ v.fecha|fechahora }}</td>
+        <td>{{ v.cliente.nombre if v.cliente else 'Consumidor final' }}</td>
+        <td>{{ v.usuario.nombre if v.usuario else '-' }}</td>
+        <td>{{ v.metodo_pago }}{% if v.paga_en_divisa %} <span class="badge badge-accent">IGTF</span>{% endif %}</td>
+        <td class="text-right">{{ v.total|bs }}</td>
+        <td class="text-right">{{ v.total_usd|usd }}</td>
+        <td>{% if v.anulada %}<span class="badge badge-danger">Anulada</span>{% else %}<span class="badge badge-success">OK</span>{% endif %}</td>
+        <td><a href="{{ url_for('ventas.factura', id=v.id) }}" class="btn btn-sm btn-secondary">Ver</a></td>
+      </tr>
+    {% else %}
+      <tr class="muted-row"><td colspan="9">Sin ventas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

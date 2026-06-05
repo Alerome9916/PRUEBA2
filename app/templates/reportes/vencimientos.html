@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Reporte de vencimientos{% endblock %}
+{% block content %}
+<h1 class="section-title">📅 Reporte de vencimientos (FEFO)</h1>
+<p class="section-subtitle">Lotes activos agrupados por semáforo de proximidad al vencimiento.</p>
+
+{% for estado, lotes in grupos.items() %}
+  {% if lotes %}
+    <div class="card">
+      <div class="card-title">
+        <span class="sem sem-{{ estado }}">{{ estado }}</span>
+        &nbsp; {{ lotes|length }} lotes
+      </div>
+      <table class="table">
+        <thead><tr><th>Lote</th><th>Producto</th><th>Vence</th><th>Días</th><th>Stock</th><th>Costo</th></tr></thead>
+        <tbody>
+          {% for l in lotes %}
+            <tr>
+              <td><code>{{ l.codigo }}</code></td>
+              <td>{{ l.producto.nombre }}</td>
+              <td>{{ l.fecha_vencimiento|fecha }}</td>
+              <td>{{ l.dias_para_vencer() }}</td>
+              <td>{{ '%.2f' % l.cantidad_actual }}</td>
+              <td>{{ l.costo_unitario|bs }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endfor %}
+{% endblock %}

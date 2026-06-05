@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Reporte de ventas{% endblock %}
+{% block content %}
+<h1 class="section-title">📊 Reporte de ventas</h1>
+<form method="get" class="toolbar">
+  <label>Desde <input type="date" name="desde" value="{{ desde }}"></label>
+  <label>Hasta <input type="date" name="hasta" value="{{ hasta }}"></label>
+  <button class="btn btn-secondary">Filtrar</button>
+  <div class="spacer"></div>
+  <button class="btn btn-secondary no-print" onclick="window.print();return false;">🖨️ Imprimir</button>
+</form>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Ventas (Bs)</div><div class="value">{{ total|bs }}</div></div>
+  <div class="kpi"><div class="label">Ventas (USD)</div><div class="value">{{ total_usd|usd }}</div></div>
+  <div class="kpi"><div class="label">IVA recaudado</div><div class="value">{{ total_iva|bs }}</div></div>
+  <div class="kpi"><div class="label">IGTF recaudado</div><div class="value">{{ total_igtf|bs }}</div></div>
+  <div class="kpi kpi-accent"><div class="label">N° facturas</div><div class="value">{{ ventas|length }}</div></div>
+</div>
+
+<div class="row">
+  <div class="card" style="flex:1;">
+    <div class="card-title">Ventas por día</div>
+    <table class="table">
+      <thead><tr><th>Fecha</th><th class="text-right">Total</th></tr></thead>
+      <tbody>
+        {% for d, t in por_dia.items() %}
+          <tr><td>{{ d }}</td><td class="text-right">{{ t|bs }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="flex:1;">
+    <div class="card-title">Top 10 productos vendidos</div>
+    <table class="table">
+      <thead><tr><th>Producto</th><th class="text-right">Cantidad</th><th class="text-right">Monto</th></tr></thead>
+      <tbody>
+        {% for r in top_productos %}
+          <tr>
+            <td>{{ r[0] }}</td>
+            <td class="text-right">{{ '%.2f' % r[1] }}</td>
+            <td class="text-right">{{ r[2]|bs }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

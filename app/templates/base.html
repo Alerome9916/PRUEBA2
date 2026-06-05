@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Los Churuguaros{% endblock %} | Sistema de Inventario</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥓</text></svg>">
+</head>
+<body class="{% if not current_user.is_authenticated %}auth-bg{% endif %}">
+
+{% if current_user.is_authenticated %}
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">LC</div>
+    <div>
+      <div class="brand-name">Los Churuguaros</div>
+      <div class="brand-sub">Charcutería · FEFO</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">Operación</div>
+    <a href="{{ url_for('dashboard.index') }}" class="nav-item">
+      <span class="icon">🏠</span> Tablero
+    </a>
+    <a href="{{ url_for('ventas.pos') }}" class="nav-item">
+      <span class="icon">🧾</span> Punto de venta
+    </a>
+    <a href="{{ url_for('ventas.listar') }}" class="nav-item">
+      <span class="icon">💵</span> Ventas
+    </a>
+
+    <div class="nav-section">Inventario FEFO</div>
+    <a href="{{ url_for('inventario.listar') }}" class="nav-item">
+      <span class="icon">📦</span> Stock por lotes
+    </a>
+    <a href="{{ url_for('inventario.ingreso') }}" class="nav-item">
+      <span class="icon">⬇️</span> Ingreso mercancía
+    </a>
+    <a href="{{ url_for('productos.listar') }}" class="nav-item">
+      <span class="icon">🧀</span> Productos
+    </a>
+    <a href="{{ url_for('alertas.index') }}" class="nav-item">
+      <span class="icon">🚨</span> Centro de alertas
+    </a>
+    <a href="{{ url_for('mermas.listar') }}" class="nav-item">
+      <span class="icon">🗑️</span> Mermas
+    </a>
+    <a href="{{ url_for('inventario.sanitario') }}" class="nav-item">
+      <span class="icon">🌡️</span> Cadena de frío
+    </a>
+
+    <div class="nav-section">CRM</div>
+    <a href="{{ url_for('clientes.listar') }}" class="nav-item">
+      <span class="icon">👥</span> Clientes
+    </a>
+    <a href="{{ url_for('proveedores.listar') }}" class="nav-item">
+      <span class="icon">🚚</span> Proveedores
+    </a>
+
+    <div class="nav-section">Inteligencia</div>
+    <a href="{{ url_for('novedad.panel') }}" class="nav-item nav-novedad">
+      <span class="icon">⚡</span> FEFO Inteligente
+    </a>
+    <a href="{{ url_for('reportes.index') }}" class="nav-item">
+      <span class="icon">📊</span> Reportes
+    </a>
+
+    {% if current_user.rol == 'admin' %}
+    <div class="nav-section">Administración</div>
+    <a href="{{ url_for('usuarios.listar') }}" class="nav-item">
+      <span class="icon">🔐</span> Usuarios
+    </a>
+    <a href="{{ url_for('configuracion.index') }}" class="nav-item">
+      <span class="icon">⚙️</span> Configuración
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="avatar">{{ current_user.nombre[:1] }}</div>
+      <div>
+        <div>{{ current_user.nombre }}</div>
+        <small>{{ current_user.rol }}</small>
+      </div>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="logout">Salir</a>
+  </div>
+</aside>
+
+<header class="topbar">
+  <div class="top-info">
+    <span class="badge-bcv">BCV: Bs. {{ '%.4f' % tasa_bcv }} / USD</span>
+    <span class="muted">RIF {{ empresa.rif }}</span>
+  </div>
+  <div class="top-info">
+    <span class="muted">{{ now.strftime('%A %d/%m/%Y %H:%M') }}</span>
+  </div>
+</header>
+
+<main class="content">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{cat}}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+{% else %}
+  {% block fullcontent %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

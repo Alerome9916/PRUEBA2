@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<h1 class="section-title">🧀 Catálogo de productos</h1>
+
+<form method="get" class="toolbar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o código">
+  <select name="categoria">
+    <option value="">Todas las categorías</option>
+    {% for c in categorias %}
+      <option value="{{ c.id }}" {% if cat==c.id %}selected{% endif %}>{{ c.nombre }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-secondary">Filtrar</button>
+  <div class="spacer"></div>
+  {% if current_user.tiene_rol('admin', 'almacen') %}
+    <a class="btn" href="{{ url_for('productos.nuevo') }}">+ Nuevo producto</a>
+  {% endif %}
+</form>
+
+<table class="table">
+  <thead><tr>
+    <th>Código</th><th>Nombre</th><th>Categoría</th>
+    <th class="text-right">Precio venta</th>
+    <th class="text-right">Stock</th>
+    <th>Próximo vence</th>
+    <th></th>
+  </tr></thead>
+  <tbody>
+    {% for p in productos %}
+      {% set lote = p.lote_proximo_vencer() %}
+      <tr>
+        <td><code>{{ p.codigo }}</code></td>
+        <td><a href="{{ url_for('productos.detalle', id=p.id) }}">{{ p.nombre }}</a></td>
+        <td>{{ p.categoria.nombre if p.categoria else '-' }}</td>
+        <td class="text-right">{{ p.precio_venta|bs }}</td>
+        <td class="text-right">{{ '%.2f' % p.stock_total() }} {{ p.unidad.codigo if p.unidad else '' }}</td>
+        <td>
+          {% if lote %}
+            <span class="sem sem-{{ lote.estado_semaforo() }}">{{ lote.fecha_vencimiento|fecha }}</span>
+          {% else %}-{% endif %}
+        </td>
+        <td>
+          {% if current_user.tiene_rol('admin','almacen') %}
+            <a href="{{ url_for('productos.editar', id=p.id) }}" class="btn btn-sm btn-secondary">Editar</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr class="muted-row"><td colspan="7">Sin productos registrados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

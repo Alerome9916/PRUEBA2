@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Lote {{ lote.codigo }}{% endblock %}
+{% block content %}
+<h1 class="section-title">📦 Lote {{ lote.codigo }}</h1>
+
+<div class="row">
+  <div class="card" style="flex:2;">
+    <div class="card-title">Trazabilidad COVENIN</div>
+    <table class="table">
+      <tr><th>Producto</th><td>{{ lote.producto.nombre }} ({{ lote.producto.codigo }})</td></tr>
+      <tr><th>Proveedor</th><td>{{ lote.proveedor.nombre if lote.proveedor else '-' }} {% if lote.proveedor %}<span class="badge">RIF {{ lote.proveedor.rif }}</span>{% endif %}</td></tr>
+      <tr><th>Fecha de ingreso</th><td>{{ lote.fecha_ingreso|fecha }}</td></tr>
+      <tr><th>Fecha de elaboración</th><td>{{ lote.fecha_elaboracion|fecha }}</td></tr>
+      <tr><th>Fecha de vencimiento</th><td><strong>{{ lote.fecha_vencimiento|fecha }}</strong> ({{ lote.dias_para_vencer() }} días)</td></tr>
+      <tr><th>Estado</th><td><span class="sem sem-{{ lote.estado_semaforo() }}">{{ lote.estado_semaforo() }}</span></td></tr>
+      <tr><th>Cantidad inicial</th><td>{{ '%.2f' % lote.cantidad_inicial }}</td></tr>
+      <tr><th>Cantidad actual</th><td><strong>{{ '%.2f' % lote.cantidad_actual }}</strong></td></tr>
+      <tr><th>Costo unitario</th><td>{{ lote.costo_unitario|bs }}</td></tr>
+      <tr><th>Precio dinámico de venta</th><td><strong>{{ lote.precio_dinamico()|bs }}</strong></td></tr>
+      <tr><th>Cadena de frío</th><td>{{ lote.producto.temperatura_min }}°C a {{ lote.producto.temperatura_max }}°C</td></tr>
+      <tr><th>Temperatura recepción</th><td>{{ lote.temperatura_recepcion }}°C</td></tr>
+      <tr><th>Documento sanitario</th><td>{{ lote.documento_sanitario or '-' }}</td></tr>
+      <tr><th>Observaciones</th><td>{{ lote.observaciones or '-' }}</td></tr>
+    </table>
+  </div>
+
+  <div class="card" style="flex:1;">
+    <div class="card-title">QR de trazabilidad</div>
+    {% if lote.qr_path %}
+      <img src="{{ url_for('static', filename=lote.qr_path) }}" style="width:100%; max-width:240px; display:block; margin: 0 auto;" alt="QR Lote">
+      <p class="small text-center mt-2">Escanéelo para auditoría sanitaria</p>
+    {% else %}
+      <p class="muted">QR no disponible.</p>
+    {% endif %}
+  </div>
+</div>
+
+<a class="btn btn-secondary" href="{{ url_for('inventario.listar') }}">← Volver</a>
+{% endblock %}

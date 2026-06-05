@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Cadena de frío{% endblock %}
+{% block content %}
+<h1 class="section-title">🌡️ Control de cadena de frío (COVENIN)</h1>
+<p class="section-subtitle">Registre temperatura y humedad de cada área. Las desviaciones se reportarán en alertas.</p>
+
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Área *</label>
+      <select name="area" required>
+        <option>nevera_principal</option>
+        <option>nevera_secundaria</option>
+        <option>vitrina_jamones</option>
+        <option>vitrina_quesos</option>
+        <option>congelador</option>
+        <option>cuarto_frio</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Temperatura (°C) *</label>
+      <input type="number" step="0.1" name="temperatura" required>
+    </div>
+    <div class="form-group">
+      <label>Humedad (%)</label>
+      <input type="number" step="0.1" name="humedad">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top:14px;">
+    <label>Observaciones</label>
+    <textarea name="observaciones"></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="submit">Registrar lectura</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-title">Últimos 60 registros</div>
+  <table class="table">
+    <thead><tr><th>Fecha</th><th>Área</th><th>Temp (°C)</th><th>Humedad</th><th>Responsable</th><th>Obs.</th></tr></thead>
+    <tbody>
+      {% for r in registros %}
+        <tr>
+          <td>{{ r.fecha|fechahora }}</td>
+          <td>{{ r.area }}</td>
+          <td>{{ r.temperatura }}</td>
+          <td>{{ r.humedad or '-' }}</td>
+          <td>{{ r.responsable.nombre if r.responsable else '-' }}</td>
+          <td>{{ r.observaciones or '-' }}</td>
+        </tr>
+      {% else %}
+        <tr class="muted-row"><td colspan="6">Sin registros aún.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

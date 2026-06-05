@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% block title %}Punto de venta{% endblock %}
+{% block content %}
+<h1 class="section-title">🧾 Punto de venta</h1>
+<p class="section-subtitle">Cada producto se descuenta automáticamente del lote que vence primero (FEFO).</p>
+
+<div class="pos-layout">
+  <div>
+    <input type="text" id="busqueda" placeholder="Buscar producto (nombre/código)..."
+           style="width:100%; padding:10px; margin-bottom:12px;">
+    <div class="product-grid" id="grid">
+      {% for p in productos %}
+        <div class="product-card" data-id="{{ p.id }}"
+             data-nombre="{{ p.nombre|lower }}" data-codigo="{{ p.codigo|lower }}">
+          <div class="name">{{ p.nombre }}</div>
+          <div class="price">{{ p.precio_venta|bs }}</div>
+          <div class="stock">Stock: {{ '%.2f' % p.stock_total() }} {{ p.unidad.codigo if p.unidad else '' }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pos-cart">
+    <h2>Carrito</h2>
+    <div class="form-group">
+      <label>Cliente</label>
+      <select id="cliente_id">
+        <option value="">Consumidor final</option>
+        {% for c in clientes %}
+          <option value="{{ c.id }}">{{ c.nombre }} ({{ c.tipo_doc }}-{{ c.documento }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <table class="table" id="cart-table" style="margin-top:8px;">
+      <thead><tr><th>Producto</th><th>Cant.</th><th class="text-right">Precio</th><th></th></tr></thead>
+      <tbody id="cart-body">
+        <tr class="muted-row"><td colspan="4">Vacío. Haga click en un producto.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="form-grid mt-2">
+      <div class="form-group">
+        <label>Método de pago</label>
+        <select id="metodo_pago">
+          <option value="bs_efectivo">Bs - Efectivo</option>
+          <option value="bs_pago_movil">Bs - Pago móvil</option>
+          <option value="bs_transferencia">Bs - Transferencia</option>
+          <option value="bs_punto">Bs - Punto de venta</option>
+          <option value="divisa_efectivo">Divisa - Efectivo</option>
+          <option value="divisa_zelle">Divisa - Zelle</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="checkbox">
+          <input type="checkbox" id="paga_divisa"> Paga en divisa (aplica IGTF 3%)
+        </label>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div><span>Subtotal:</span><span id="t-subtotal">Bs. 0,00</span></div>
+      <div><span>Descuento dinámico FEFO:</span><span id="t-desc" class="success-text">- Bs. 0,00</span></div>
+      <div><span>Base imponible:</span><span id="t-base">Bs. 0,00</span></div>
+      <div><span>IVA (16%):</span><span id="t-iva">Bs. 0,00</span></div>
+      <div id="igtf-line" style="display:none;"><span>IGTF (3%):</span><span id="t-igtf">Bs. 0,00</span></div>
+      <div class="total-line"><span>TOTAL:</span><span id="t-total">Bs. 0,00</span></div>
+      <div class="small text-right" id="t-usd">$ 0.00 a tasa BCV {{ tasa_bcv }}</div>
+    </div>
+
+    <button class="btn btn-success" style="width:100%; margin-top:10px;" id="btn-cobrar">
+      Cobrar venta
+    </button>
+  </div>
+</div>
+
+<script>
+const TASA = {{ tasa_bcv }};
+const IVA = 0.16;
+const carrito = []; // {producto_id, nombre, cantidad, asignaciones, precio_base, descuento_unitario, precio_efectivo}
+
+function fmt(v){ return 'Bs. ' + Number(v).toLocaleString('es-VE',{minimumFractionDigits:2}); }
+
+document.getElementById('busqueda').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.product-card').forEach(card => {
+    const m = card.dataset.nombre.includes(q) || card.dataset.codigo.includes(q);
+    card.style.display = m ? '' : 'none';
+  });
+});
+
+document.querySelectorAll('.product-card').forEach(card => {
+  card.addEventListener('click', async () => {
+    const id = parseInt(card.dataset.id);
+    const cantStr = prompt('Cantidad a vender:', '1');
+    if (!cantStr) return;
+    const cant = parseFloat(cantStr);
+    if (isNaN(cant) || cant <= 0) return;
+
+    const r = await fetch(`/ventas/api/fefo/${id}?cantidad=${cant}`);
+    const data = await r.json();
+    if (data.cantidad_no_cubierta > 0) {
+      alert(`Stock insuficiente. Faltan ${data.cantidad_no_cubierta} unidades.`);
+      return;
+    }
+    if (!data.asignaciones.length) { alert('Sin stock disponible.'); return; }
+
+    // Sumar al carrito (cada asignación FEFO = un renglón)
+    data.asignaciones.forEach(a => {
+      carrito.push({
+        producto_id: data.producto.id,
+        nombre: data.producto.nombre,
+        lote: a.lote_codigo,
+        venc: a.fecha_vencimiento,
+        sem: a.semaforo,
+        cantidad: a.cantidad,
+        precio_base: data.producto.precio_base,
+        precio_efectivo: a.precio_unit,
+        iva: data.producto.iva_alicuota,
+      });
+    });
+    pintarCarrito();
+  });
+});
+
+function pintarCarrito() {
+  const tbody = document.getElementById('cart-body');
+  if (!carrito.length) {
+    tbody.innerHTML = '<tr class="muted-row"><td colspan="4">Vacío. Haga click en un producto.</td></tr>';
+  } else {
+    tbody.innerHTML = carrito.map((it, idx) => `
+      <tr>
+        <td>
+          <div>${it.nombre}</div>
+          <div class="small">Lote ${it.lote} · vence ${it.venc} <span class="sem sem-${it.sem}">${it.sem}</span></div>
+        </td>
+        <td>${it.cantidad}</td>
+        <td class="text-right">
+          ${fmt(it.precio_efectivo)}
+          ${it.precio_efectivo < it.precio_base ? `<div class="small success-text">antes ${fmt(it.precio_base)}</div>` : ''}
+        </td>
+        <td><button class="btn btn-sm btn-secondary" onclick="quitar(${idx})">×</button></td>
+      </tr>
+    `).join('');
+  }
+  calcularTotales();
+}
+
+function quitar(idx){ carrito.splice(idx,1); pintarCarrito(); }
+
+function calcularTotales() {
+  let subtotal = 0, descuento = 0, baseImp = 0, iva = 0;
+  carrito.forEach(it => {
+    const lineaBase = it.cantidad * it.precio_base;
+    const lineaDesc = it.cantidad * (it.precio_base - it.precio_efectivo);
+    const lineaNeta = lineaBase - lineaDesc;
+    subtotal += lineaBase;
+    descuento += lineaDesc;
+    baseImp += lineaNeta;
+    iva += lineaNeta * (it.iva || IVA);
+  });
+  const pagaDivisa = document.getElementById('paga_divisa').checked;
+  const totalSinIgtf = baseImp + iva;
+  const igtf = pagaDivisa ? totalSinIgtf * 0.03 : 0;
+  const total = totalSinIgtf + igtf;
+
+  document.getElementById('t-subtotal').textContent = fmt(subtotal);
+  document.getElementById('t-desc').textContent = '- ' + fmt(descuento);
+  document.getElementById('t-base').textContent = fmt(baseImp);
+  document.getElementById('t-iva').textContent = fmt(iva);
+  document.getElementById('t-igtf').textContent = fmt(igtf);
+  document.getElementById('igtf-line').style.display = pagaDivisa ? 'flex' : 'none';
+  document.getElementById('t-total').textContent = fmt(total);
+  document.getElementById('t-usd').textContent = '$ ' + (total / TASA).toFixed(2) + ' a tasa BCV ' + TASA;
+}
+
+document.getElementById('paga_divisa').addEventListener('change', calcularTotales);
+
+document.getElementById('btn-cobrar').addEventListener('click', async () => {
+  if (!carrito.length) { alert('Carrito vacío.'); return; }
+  // Agrupar por producto, sumando cantidades de todos los lotes (el backend rehará la asignación FEFO)
+  const agrupado = {};
+  carrito.forEach(it => {
+    agrupado[it.producto_id] = (agrupado[it.producto_id] || 0) + parseFloat(it.cantidad);
+  });
+  const items = Object.entries(agrupado).map(([pid, cant]) => ({producto_id: parseInt(pid), cantidad: cant}));
+
+  const payload = {
+    cliente_id: document.getElementById('cliente_id').value ? parseInt(document.getElementById('cliente_id').value) : null,
+    items: items,
+    metodo_pago: document.getElementById('metodo_pago').value,
+    paga_en_divisa: document.getElementById('paga_divisa').checked,
+  };
+  const r = await fetch('/ventas/confirmar', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const data = await r.json();
+  if (!data.ok) { alert('Error: ' + data.error); return; }
+  window.location = `/ventas/${data.venta_id}`;
+});
+</script>
+{% endblock %}

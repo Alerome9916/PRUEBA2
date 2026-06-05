@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h1 class="section-title">👥 Clientes</h1>
+<form method="get" class="toolbar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o documento">
+  <button class="btn btn-secondary">Buscar</button>
+  <div class="spacer"></div>
+  <a class="btn" href="{{ url_for('clientes.nuevo') }}">+ Nuevo cliente</a>
+</form>
+<table class="table">
+  <thead><tr>
+    <th>Documento</th><th>Nombre</th><th>Teléfono</th>
+    <th>Notif.</th><th>Puntos</th><th></th>
+  </tr></thead>
+  <tbody>
+    {% for c in clientes %}
+      <tr>
+        <td><code>{{ c.tipo_doc }}-{{ c.documento }}</code></td>
+        <td>{{ c.nombre }}</td>
+        <td>{{ c.telefono or '-' }}</td>
+        <td>{% if c.acepta_notificaciones %}<span class="badge badge-success">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
+        <td>{{ c.puntos_fidelidad or 0 }}</td>
+        <td>
+          <a class="btn btn-sm btn-secondary" href="{{ url_for('clientes.editar', id=c.id) }}">Editar</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr class="muted-row"><td colspan="6">Sin clientes registrados.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

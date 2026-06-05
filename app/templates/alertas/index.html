@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Centro de alertas{% endblock %}
+{% block content %}
+<h1 class="section-title">🚨 Centro de alertas</h1>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-danger">
+    <div class="label">Vencidos</div>
+    <div class="value">{{ vencidos|length }}</div>
+  </div>
+  <div class="kpi kpi-danger">
+    <div class="label">Críticos (≤3 días)</div>
+    <div class="value">{{ rojo|length }}</div>
+  </div>
+  <div class="kpi kpi-warning">
+    <div class="label">Próximos (≤7 días)</div>
+    <div class="value">{{ amarillo|length }}</div>
+  </div>
+  <div class="kpi kpi-warning">
+    <div class="label">Stock bajo</div>
+    <div class="value">{{ bajo_stock|length }}</div>
+  </div>
+  <div class="kpi kpi-danger">
+    <div class="label">Cadena de frío fuera de rango</div>
+    <div class="value">{{ fuera_rango|length }}</div>
+  </div>
+</div>
+
+{% macro lote_table(lotes, title, color) %}
+  {% if lotes %}
+  <div class="card">
+    <div class="card-title">{{ title }}</div>
+    <table class="table">
+      <thead><tr><th>Lote</th><th>Producto</th><th>Vence</th><th>Días</th><th>Stock</th></tr></thead>
+      <tbody>
+        {% for l in lotes %}
+          <tr>
+            <td><a href="{{ url_for('inventario.detalle_lote', id=l.id) }}">{{ l.codigo }}</a></td>
+            <td>{{ l.producto.nombre }}</td>
+            <td>{{ l.fecha_vencimiento|fecha }}</td>
+            <td>{{ l.dias_para_vencer() }}</td>
+            <td>{{ '%.2f' % l.cantidad_actual }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{{ lote_table(vencidos, '⚫ Lotes ya vencidos (retirar inmediatamente)', 'danger') }}
+{{ lote_table(rojo, '🔴 Críticos: 0-3 días', 'danger') }}
+{{ lote_table(amarillo, '🟡 Próximos: 4-7 días', 'warning') }}
+
+{% if bajo_stock %}
+<div class="card">
+  <div class="card-title">📉 Productos bajo stock mínimo</div>
+  <table class="table">
+    <thead><tr><th>Producto</th><th>Stock actual</th><th>Stock mínimo</th></tr></thead>
+    <tbody>
+      {% for p, s in bajo_stock %}
+        <tr><td>{{ p.nombre }}</td><td>{{ '%.2f' % s }}</td><td>{{ '%.2f' % p.stock_minimo }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if fuera_rango %}
+<div class="card">
+  <div class="card-title">🌡️ Lecturas de temperatura fuera de rango (últimas 24h)</div>
+  <table class="table">
+    <thead><tr><th>Fecha</th><th>Área</th><th>Temp</th><th>Responsable</th></tr></thead>
+    <tbody>
+      {% for r in fuera_rango %}
+        <tr>
+          <td>{{ r.fecha|fechahora }}</td>
+          <td>{{ r.area }}</td>
+          <td class="danger-text">{{ r.temperatura }}°C</td>
+          <td>{{ r.responsable.nombre if r.responsable else '-' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

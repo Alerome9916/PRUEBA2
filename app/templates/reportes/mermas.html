@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Reporte de mermas{% endblock %}
+{% block content %}
+<h1 class="section-title">🗑️ Reporte de mermas</h1>
+<form method="get" class="toolbar">
+  <label>Desde <input type="date" name="desde" value="{{ desde }}"></label>
+  <label>Hasta <input type="date" name="hasta" value="{{ hasta }}"></label>
+  <button class="btn btn-secondary">Filtrar</button>
+  <div class="spacer"></div>
+  <span class="badge badge-danger">Pérdida total: {{ total|bs }}</span>
+</form>
+
+<div class="card">
+  <div class="card-title">Pérdida por motivo</div>
+  <table class="table">
+    <thead><tr><th>Motivo</th><th class="text-right">Pérdida</th></tr></thead>
+    <tbody>
+      {% for m, v in por_motivo.items() %}
+        <tr><td>{{ m }}</td><td class="text-right">{{ v|bs }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">Detalle</div>
+  <table class="table">
+    <thead><tr><th>Fecha</th><th>Producto</th><th>Lote</th><th>Cant.</th><th>Motivo</th><th class="text-right">Pérdida</th></tr></thead>
+    <tbody>
+      {% for m in mermas %}
+        <tr>
+          <td>{{ m.fecha|fechahora }}</td>
+          <td>{{ m.producto.nombre }}</td>
+          <td><code>{{ m.lote.codigo if m.lote else '-' }}</code></td>
+          <td>{{ '%.2f' % m.cantidad }}</td>
+          <td><span class="badge">{{ m.motivo }}</span></td>
+          <td class="text-right">{{ m.valor_perdido|bs }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

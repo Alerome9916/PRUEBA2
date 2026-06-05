@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if u else 'Nuevo' }} usuario{% endblock %}
+{% block content %}
+<h1 class="section-title">{{ 'Editar' if u else 'Nuevo' }} usuario</h1>
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Usuario *</label>
+      <input type="text" name="usuario" required value="{{ u.usuario if u else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Nombre completo *</label>
+      <input type="text" name="nombre" required value="{{ u.nombre if u else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Cédula</label>
+      <input type="text" name="cedula" value="{{ u.cedula if u else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email" value="{{ u.email if u else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Rol *</label>
+      <select name="rol" required>
+        {% for r in roles %}
+          <option value="{{ r }}" {% if u and u.rol==r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Contraseña {% if u %}(dejar vacío para no cambiar){% else %}*{% endif %}</label>
+      <input type="password" name="password" {% if not u %}required{% endif %}>
+    </div>
+    {% if u %}
+    <div class="form-group">
+      <label class="checkbox">
+        <input type="checkbox" name="activo" {% if u.activo %}checked{% endif %}>
+        Activo
+      </label>
+    </div>
+    {% endif %}
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn-secondary" href="{{ url_for('usuarios.listar') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

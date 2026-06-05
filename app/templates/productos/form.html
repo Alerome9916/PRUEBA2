@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if p else 'Nuevo' }} producto{% endblock %}
+{% block content %}
+<h1 class="section-title">{{ 'Editar' if p else 'Nuevo' }} producto</h1>
+
+<form method="post" class="card">
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Código / SKU *</label>
+      <input type="text" name="codigo" required value="{{ p.codigo if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Nombre *</label>
+      <input type="text" name="nombre" required value="{{ p.nombre if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Categoría *</label>
+      <select name="categoria_id" required>
+        {% for c in categorias %}
+          <option value="{{ c.id }}" {% if p and p.categoria_id==c.id %}selected{% endif %}>{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Unidad *</label>
+      <select name="unidad_id" required>
+        {% for u in unidades %}
+          <option value="{{ u.id }}" {% if p and p.unidad_id==u.id %}selected{% endif %}>{{ u.codigo }} - {{ u.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Precio compra (Bs)</label>
+      <input type="number" step="0.01" name="precio_compra" value="{{ p.precio_compra if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Precio venta (Bs)</label>
+      <input type="number" step="0.01" name="precio_venta" value="{{ p.precio_venta if p else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Alícuota IVA</label>
+      <select name="iva_alicuota">
+        <option value="0.16" {% if not p or p.iva_alicuota==0.16 %}selected{% endif %}>16% (General)</option>
+        <option value="0.08" {% if p and p.iva_alicuota==0.08 %}selected{% endif %}>8% (Reducido)</option>
+        <option value="0.00" {% if p and p.iva_alicuota==0.00 %}selected{% endif %}>0% (Exento)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Vida útil (días)</label>
+      <input type="number" name="vida_util_dias" value="{{ p.vida_util_dias if p else 30 }}">
+    </div>
+    <div class="form-group">
+      <label>Temperatura mínima (°C)</label>
+      <input type="number" step="0.1" name="temperatura_min" value="{{ p.temperatura_min if p else 0 }}">
+    </div>
+    <div class="form-group">
+      <label>Temperatura máxima (°C)</label>
+      <input type="number" step="0.1" name="temperatura_max" value="{{ p.temperatura_max if p else 4 }}">
+    </div>
+    <div class="form-group">
+      <label>Stock mínimo</label>
+      <input type="number" step="0.01" name="stock_minimo" value="{{ p.stock_minimo if p else 0 }}">
+    </div>
+    <div class="form-group">
+      <label class="checkbox">
+        <input type="checkbox" name="es_refrigerado" {% if not p or p.es_refrigerado %}checked{% endif %}>
+        Requiere refrigeración
+      </label>
+    </div>
+  </div>
+  <div class="form-group" style="margin-top:14px;">
+    <label>Descripción</label>
+    <textarea name="descripcion">{{ p.descripcion if p else '' }}</textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn" type="submit">Guardar</button>
+    <a class="btn btn-secondary" href="{{ url_for('productos.listar') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

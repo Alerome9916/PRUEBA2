@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block fullcontent %}
+<div class="login-card">
+  <h1>Los Churuguaros</h1>
+  <p>Sistema de Inventario con FEFO · Venezuela</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{cat}}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="post">
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" name="usuario" required autofocus>
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" name="password" required>
+    </div>
+    <button class="btn" type="submit">Ingresar</button>
+  </form>
+
+  <div class="login-hint">
+    <strong>Demo:</strong><br>
+    Admin: <code>admin</code> / <code>admin123</code><br>
+    Cajero: <code>cajero</code> / <code>cajero123</code><br>
+    Almacén: <code>almacen</code> / <code>almacen123</code>
+  </div>
+</div>
+{% endblock %}

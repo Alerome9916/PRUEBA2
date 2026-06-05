@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Factura {{ venta.numero_factura }}{% endblock %}
+{% block content %}
+<div class="no-print toolbar">
+  <a href="{{ url_for('ventas.listar') }}" class="btn btn-secondary">← Ventas</a>
+  <a href="{{ url_for('ventas.pos') }}" class="btn">+ Nueva venta</a>
+  <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button>
+  <div class="spacer"></div>
+  {% if not venta.anulada and current_user.rol=='admin' %}
+  <form method="post" action="{{ url_for('ventas.anular', id=venta.id) }}"
+        onsubmit="return confirm('¿Anular esta factura y restituir stock?')">
+    <input type="hidden" name="motivo" value="Anulación administrativa">
+    <button class="btn btn-danger">Anular factura</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="factura-card">
+  <div class="factura-header">
+    <div>
+      <h1>{{ empresa.nombre }}</h1>
+      <div>RIF: <strong>{{ empresa.rif }}</strong></div>
+      <div class="small">{{ empresa.direccion }}</div>
+      <div class="small">Tel: {{ empresa.telefono }} · {{ empresa.email }}</div>
+      <div class="small">Reg. Sanitario: {{ empresa.registro_sanitario }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="badge badge-primary" style="font-size:14px; padding:6px 12px;">FACTURA</div>
+      <h2 style="margin:6px 0;">N° {{ venta.numero_factura }}</h2>
+      <div class="small">Fecha: {{ venta.fecha|fechahora }}</div>
+      <div class="small">Cajero: {{ venta.usuario.nombre if venta.usuario else '-' }}</div>
+      {% if venta.anulada %}
+        <div class="badge badge-danger mt-2">ANULADA</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row" style="margin-bottom:14px;">
+    <div>
+      <strong>Cliente:</strong><br>
+      {% if venta.cliente %}
+        {{ venta.cliente.nombre }}<br>
+        <span class="small">{{ venta.cliente.tipo_doc }}-{{ venta.cliente.documento }}</span>
+      {% else %}
+        Consumidor final
+      {% endif %}
+    </div>
+    <div>
+      <strong>Método de pago:</strong><br>
+      {{ venta.metodo_pago }}
+      {% if venta.paga_en_divisa %}<br><span class="badge badge-accent">Divisa - IGTF aplicado</span>{% endif %}
+    </div>
+    <div>
+      <strong>Tasa BCV:</strong><br>
+      Bs. {{ '%.4f' % venta.tasa_bcv }} / USD
+    </div>
+  </div>
+
+  <table class="table">
+    <thead><tr>
+      <th>Producto</th><th>Lote (vence)</th>
+      <th class="text-right">Cant.</th>
+      <th class="text-right">P. unit.</th>
+      <th class="text-right">Desc.</th>
+      <th class="text-right">Subtotal</th>
+    </tr></thead>
+    <tbody>
+      {% for d in venta.detalles %}
+        <tr>
+          <td>{{ d.producto.nombre }}</td>
+          <td class="small">{{ d.lote.codigo if d.lote else '-' }}
+              {% if d.lote %}<br>vence {{ d.lote.fecha_vencimiento|fecha }}{% endif %}</td>
+          <td class="text-right">{{ '%.3f' % d.cantidad }}</td>
+          <td class="text-right">{{ d.precio_unitario|bs }}</td>
+          <td class="text-right">{{ d.descuento_unitario|bs }}</td>
+          <td class="text-right">{{ d.subtotal|bs }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+    <table style="min-width:300px;">
+      <tr><td>Subtotal:</td><td class="text-right">{{ venta.subtotal|bs }}</td></tr>
+      <tr><td>Descuento FEFO:</td><td class="text-right success-text">- {{ venta.descuento_total|bs }}</td></tr>
+      <tr><td>Base imponible:</td><td class="text-right">{{ venta.base_imponible|bs }}</td></tr>
+      <tr><td>IVA:</td><td class="text-right">{{ venta.iva|bs }}</td></tr>
+      {% if venta.igtf and venta.igtf > 0 %}
+        <tr><td>IGTF (3%):</td><td class="text-right">{{ venta.igtf|bs }}</td></tr>
+      {% endif %}
+      <tr style="border-top:2px solid #000; font-weight:700; font-size:16px;">
+        <td>TOTAL:</td><td class="text-right">{{ venta.total|bs }}</td>
+      </tr>
+      <tr><td>Total referencial:</td><td class="text-right">{{ venta.total_usd|usd }}</td></tr>
+    </table>
+  </div>
+
+  <hr>
+  <p class="small text-center">
+    Sistema autorizado por SENIAT - Providencia 00071.<br>
+    Esta factura se emitió por medio electrónico bajo la normativa vigente.<br>
+    Conserve esta factura por mínimo 5 años (Código Orgánico Tributario).
+  </p>
+</div>
+{% endblock %}

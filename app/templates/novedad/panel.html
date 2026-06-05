@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}FEFO Inteligente{% endblock %}
+{% block content %}
+
+<div class="novedad-banner">
+  <div>
+    <h2>⚡ FEFO Inteligente · El cerebro anti-desperdicio de Los Churuguaros</h2>
+    <p>Predicción de caducidad, descuento dinámico, combos sugeridos y notificación a clientes en un solo lugar.</p>
+  </div>
+</div>
+
+<!-- Score de Frescura -->
+<div class="row">
+  <div class="card" style="flex: 1; text-align:center;">
+    <div class="card-title">Score de Frescura</div>
+    <div class="score-circle" style="--p: {{ score.score }}; margin:0 auto;">
+      <span>{{ score.score }}</span>
+    </div>
+    <p class="small mt-2">{{ score.total }} lotes activos analizados</p>
+    <div class="gap-12" style="justify-content:center;">
+      <span class="badge badge-success">🟢 {{ score.ok + score.verde }} sanos</span>
+      <span class="badge" style="background:#fcf3df;color:#6b5006;">🟡 {{ score.amarillo }}</span>
+      <span class="badge badge-danger">🔴 {{ score.rojo }}</span>
+      <span class="badge" style="background:#000;color:#fff;">⚫ {{ score.vencido }} vencidos</span>
+    </div>
+  </div>
+
+  <div class="card" style="flex: 2;">
+    <div class="card-title">📉 Proyección predictiva de caducidad</div>
+    <p class="small">
+      Cruza la velocidad histórica de ventas (últimos 30 días) con el stock real
+      y la fecha de vencimiento. Muestra qué cantidad probablemente NO se venderá a tiempo.
+    </p>
+    <table class="table">
+      <thead><tr>
+        <th>Producto</th><th>Lote</th><th>Vence</th>
+        <th class="text-right">Stock</th>
+        <th class="text-right">Velocidad/día</th>
+        <th class="text-right">Vencerá sin vender</th>
+        <th>Riesgo</th>
+      </tr></thead>
+      <tbody>
+        {% for p, riesgos in proyecciones %}
+          {% for r in riesgos %}
+            {% if r.riesgo in ('alto', 'medio') %}
+            <tr>
+              <td>{{ p.nombre }}</td>
+              <td><code>{{ r.lote.codigo }}</code></td>
+              <td>{{ r.lote.fecha_vencimiento|fecha }}</td>
+              <td class="text-right">{{ '%.2f' % r.lote.cantidad_actual }}</td>
+              <td class="text-right">{{ '%.2f' % r.velocidad_diaria }}</td>
+              <td class="text-right danger-text">{{ '%.2f' % r.cantidad_proyectada_vencer }}</td>
+              <td><span class="badge {% if r.riesgo=='alto' %}badge-danger{% else %}badge-accent{% endif %}">{{ r.riesgo }}</span></td>
+            </tr>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <tr class="muted-row"><td colspan="7">No hay productos en riesgo predictivo. ¡Inventario eficiente!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Descuentos dinámicos -->
+<div class="card">
+  <div class="card-title">💸 Descuentos dinámicos activos (precio cae con los días)</div>
+  <p class="small">
+    El sistema reduce automáticamente el precio del lote a medida que se acerca su fecha de vencimiento
+    (hasta un máximo configurable). Aplica al cobrar en el POS.
+  </p>
+  <table class="table">
+    <thead><tr>
+      <th>Lote</th><th>Producto</th><th>Vence en</th>
+      <th class="text-right">Precio base</th>
+      <th class="text-right">Precio actual</th>
+      <th class="text-right">Ahorro</th>
+      <th>%</th>
+    </tr></thead>
+    <tbody>
+      {% for d in descuentos_activos[:20] %}
+        <tr>
+          <td><code>{{ d.lote.codigo }}</code></td>
+          <td>{{ d.lote.producto.nombre }}</td>
+          <td>{{ d.lote.dias_para_vencer() }} días</td>
+          <td class="text-right">{{ d.precio_base|bs }}</td>
+          <td class="text-right success-text"><strong>{{ d.precio_dinamico|bs }}</strong></td>
+          <td class="text-right">{{ d.ahorro|bs }}</td>
+          <td><span class="badge badge-accent">-{{ '%.1f' % d.pct }}%</span></td>
+        </tr>
+      {% else %}
+        <tr class="muted-row"><td colspan="7">Sin descuentos activos en este momento.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Combos anti-desperdicio -->
+<div class="row">
+  <div class="card" style="flex: 1;">
+    <div class="card-title">🍽️ Combos anti-desperdicio sugeridos</div>
+    {% if combos %}
+      {% for c in combos %}
+        <div style="border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px;">
+          <strong>{{ c.nombre }}</strong>
+          <div class="small">{{ c.productos }}</div>
+          <div class="gap-12 mt-2">
+            <span class="badge badge-accent">{{ '%.2f Bs' % c.precio_combo }}</span>
+            <span class="badge badge-success">Ahorro {{ '%.2f Bs' % c.ahorro }}</span>
+          </div>
+          {% if current_user.tiene_rol('admin','cajero') %}
+          <form method="post" action="{{ url_for('novedad.guardar_combo') }}" class="mt-2">
+            <input type="hidden" name="nombre" value="{{ c.nombre }}">
+            <input type="hidden" name="descripcion" value="Promoción FEFO automática">
+            <input type="hidden" name="productos" value="{{ c.productos }}">
+            <input type="hidden" name="precio_combo" value="{{ c.precio_combo }}">
+            <button class="btn btn-sm">Guardar combo</button>
+          </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">Sin combos sugeridos en este momento.</p>
+    {% endif %}
+  </div>
+
+  <!-- Notificaciones -->
+  <div class="card" style="flex: 1;">
+    <div class="card-title">📣 Notificar a clientes (FEFO CRM)</div>
+    <p class="small">Envía a clientes suscritos una promoción para mover productos próximos a vencer.</p>
+    <form method="post" action="{{ url_for('novedad.notificar') }}">
+      <div class="form-group">
+        <label>Canal</label>
+        <select name="canal">
+          <option value="whatsapp">WhatsApp</option>
+          <option value="sms">SMS</option>
+          <option value="email">Email</option>
+          <option value="sistema">Solo en sistema</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mensaje</label>
+        <textarea name="mensaje" required placeholder="Ej: ¡Promo de hoy en Los Churuguaros! Tabla de quesos con -30% por aniversario..."></textarea>
+      </div>
+      <button class="btn btn-accent">Enviar a clientes suscritos</button>
+    </form>
+
+    <hr>
+    <div class="card-title">Últimas notificaciones</div>
+    <table class="table">
+      <thead><tr><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Mensaje</th></tr></thead>
+      <tbody>
+        {% for n in notifs %}
+          <tr>
+            <td class="small">{{ n.fecha|fechahora }}</td>
+            <td>{{ n.cliente.nombre if n.cliente else '-' }}</td>
+            <td><span class="badge">{{ n.canal }}</span></td>
+            <td class="small">{{ n.mensaje[:80] }}{% if n.mensaje|length > 80 %}…{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr class="muted-row"><td colspan="4">Sin notificaciones aún.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if combos_guardados %}
+<div class="card">
+  <div class="card-title">📋 Combos guardados</div>
+  <table class="table">
+    <thead><tr><th>Nombre</th><th>Productos</th><th>Precio</th><th>Creado</th></tr></thead>
+    <tbody>
+      {% for c in combos_guardados %}
+        <tr>
+          <td>{{ c.nombre }}</td>
+          <td>{{ c.productos }}</td>
+          <td>{{ c.precio_combo|bs }}</td>
+          <td class="small">{{ c.creado_en|fechahora }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}
