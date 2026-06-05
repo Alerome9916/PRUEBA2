@@ -4,6 +4,8 @@ export function evaluateLotCompliance(lot, product, state, referenceDate = new D
   const blockers = [];
   const warnings = [];
   const daysToExpire = daysBetween(referenceDate, lot.expiryAt);
+  const zone = state.zones.find((entry) => entry.id === lot.zone);
+  const allowedTemperature = lot.allowedStorageTempC ?? zone?.maxTemperatureC ?? product.storageTempMax;
 
   if (daysToExpire < 0) {
     blockers.push("Lote vencido: no puede comercializarse.");
@@ -32,9 +34,9 @@ export function evaluateLotCompliance(lot, product, state, referenceDate = new D
     .filter((log) => log.zone === lot.zone)
     .sort((left, right) => toDate(right.recordedAt) - toDate(left.recordedAt))[0];
 
-  if (recentLog && recentLog.temperatureC > product.storageTempMax) {
+  if (recentLog && recentLog.temperatureC > allowedTemperature) {
     blockers.push(
-      `Ultima lectura termica fuera de rango (${recentLog.temperatureC.toFixed(1)} C > ${product.storageTempMax} C en ${formatDateTime(recentLog.recordedAt)}).`
+      `Ultima lectura termica fuera de rango (${recentLog.temperatureC.toFixed(1)} C > ${allowedTemperature} C en ${formatDateTime(recentLog.recordedAt)}).`
     );
   }
 
@@ -46,7 +48,7 @@ export function evaluateLotCompliance(lot, product, state, referenceDate = new D
     }))
     .find(
       (event) =>
-        event.durationMinutes > state.meta.coldChainToleranceMinutes && event.maxTemperatureC > product.storageTempMax
+        event.durationMinutes > state.meta.coldChainToleranceMinutes && event.maxTemperatureC > allowedTemperature
     );
 
   if (outageRisk) {
@@ -115,7 +117,9 @@ export function assessOutageImpact(state, referenceDate = new Date()) {
       const durationMinutes = minutesBetween(event.startedAt, event.endedAt);
       const impactedLots = state.lots.filter((lot) => lot.zone === event.zone).map((lot) => {
         const product = productMap.get(lot.productId);
-        const thermalGap = event.maxTemperatureC - product.storageTempMax;
+        const zone = zoneMap.get(lot.zone);
+        const allowedTemperature = lot.allowedStorageTempC ?? zone?.maxTemperatureC ?? product.storageTempMax;
+        const thermalGap = event.maxTemperatureC - allowedTemperature;
         const quarantine = durationMinutes > state.meta.coldChainToleranceMinutes && thermalGap > 0;
         return {
           lotId: lot.id,

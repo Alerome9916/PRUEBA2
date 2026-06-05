@@ -42,9 +42,9 @@ test("contingencia electrica deja lotes de camara-2 en cuarentena preventiva", (
   assert.deepEqual(quarantinedLots, ["LCH-240531-05", "LCH-240603-03"]);
 });
 
-test("alertas separan urgentes de bloqueados", () => {
+test("alertas separan advertencias de bloqueados", () => {
   const alerts = buildExpiryAlerts(seedState, referenceDate);
 
-  assert.equal(alerts.urgent.some((lot) => lot.id === "LCH-240602-02"), true);
+  assert.equal(alerts.warning.some((lot) => lot.id === "LCH-240602-02"), true);
   assert.equal(alerts.blocked.some((lot) => lot.id === "LCH-240530-04"), true);
 });
