@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Los Churuguaros | Sistema FEFO de Charcuteria</title>
+    <link rel="stylesheet" href="/public/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="topbar" aria-label="Navegacion principal">
+        <div class="brand">
+          <span class="brand-mark">LC</span>
+          <div>
+            <strong>Los Churuguaros</strong>
+            <small>Inventario, caducidad FEFO y cumplimiento</small>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <button class="ghost" id="resetDataButton" type="button">Restaurar datos demo</button>
+          <button class="primary" id="printButton" type="button">Imprimir reporte</button>
+        </div>
+      </nav>
+
+      <section class="hero-grid">
+        <div>
+          <p class="eyebrow">Charcuteria venezolana con control sanitario</p>
+          <h1>Sistema integral para rotar, vender y auditar productos por caducidad FEFO.</h1>
+          <p class="hero-copy">
+            Gestiona lotes, vencimientos, ventas, compras, proveedores, temperaturas,
+            saneamiento, trazabilidad y cumplimiento referencial con normas aplicables en Venezuela.
+          </p>
+          <div class="hero-actions">
+            <a href="#ventas" class="primary">Registrar venta FEFO</a>
+            <a href="#alertas" class="ghost">Ver alertas</a>
+          </div>
+        </div>
+        <aside class="innovation-card" id="radarCard">
+          <span class="badge">Novedad exclusiva</span>
+          <h2>Radar Churuguaros anti-merma</h2>
+          <p>
+            Recomienda combos, descuentos y acciones de vitrina segun riesgo real de caducidad,
+            margen expuesto y disponibilidad por lote.
+          </p>
+          <div id="radarSummary"></div>
+        </aside>
+      </section>
+    </header>
+
+    <main>
+      <section class="module" id="tablero">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Tablero ejecutivo</p>
+            <h2>Estado de la tienda hoy</h2>
+          </div>
+          <input id="todayInput" type="date" aria-label="Fecha operativa" />
+        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+      </section>
+
+      <section class="module" id="inventario">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Inventario inteligente</p>
+            <h2>Stock por producto y proxima caducidad</h2>
+          </div>
+          <div class="filters">
+            <input id="inventorySearch" type="search" placeholder="Buscar producto, SKU o categoria" />
+            <select id="categoryFilter" aria-label="Filtrar categoria"></select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoria</th>
+                <th>Stock</th>
+                <th>Punto reposicion</th>
+                <th>Proximo vencimiento</th>
+                <th>Accion sugerida</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="module" id="lotes">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Caducidad FEFO</p>
+            <h2>Lotes ordenados por vencimiento</h2>
+          </div>
+          <button class="secondary" id="exportLabelsButton" type="button">Generar etiquetas</button>
+        </div>
+        <div class="lot-board" id="lotBoard"></div>
+      </section>
+
+      <section class="module split" id="ventas">
+        <div>
+          <p class="eyebrow">Ventas y despacho</p>
+          <h2>Venta automatizada por FEFO</h2>
+          <p class="muted">
+            Selecciona producto y cantidad. El sistema asigna lotes con fecha de caducidad mas cercana,
+            respetando vida util minima por producto.
+          </p>
+          <form id="saleForm" class="card form-grid">
+            <label>
+              Cliente
+              <input name="customer" value="Venta mostrador" />
+            </label>
+            <label>
+              Producto
+              <select name="productId" id="saleProductSelect" required></select>
+            </label>
+            <label>
+              Cantidad
+              <input name="quantity" type="number" min="0.001" step="0.001" value="1" required />
+            </label>
+            <button class="primary" type="submit">Despachar con FEFO</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Ultimas ventas</h3>
+          <div id="salesList" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="module split" id="compras">
+        <div>
+          <p class="eyebrow">Recepcion y compras</p>
+          <h2>Ingreso sanitario de lote</h2>
+          <form id="purchaseForm" class="card form-grid">
+            <label>
+              Producto
+              <select name="productId" id="purchaseProductSelect" required></select>
+            </label>
+            <label>
+              Proveedor
+              <select name="supplierId" id="supplierSelect" required></select>
+            </label>
+            <label>
+              Cantidad
+              <input name="quantity" type="number" min="0.001" step="0.001" value="5" required />
+            </label>
+            <label>
+              Costo por unidad
+              <input name="cost" type="number" min="0" step="0.01" value="3.50" required />
+            </label>
+            <label>
+              Fecha de vencimiento
+              <input name="expiresAt" type="date" required />
+            </label>
+            <label>
+              Temperatura recepcion C
+              <input name="temperatureAtReception" type="number" step="0.1" value="3" required />
+            </label>
+            <button class="primary" type="submit">Registrar lote</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Orden sugerida de reposicion</h3>
+          <div id="reorderList" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="module" id="alertas">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Centro de alertas</p>
+            <h2>Vencimientos, bloqueos y acciones correctivas</h2>
+          </div>
+        </div>
+        <div class="alert-grid" id="alertsGrid"></div>
+      </section>
+
+      <section class="module split" id="trazabilidad">
+        <div>
+          <p class="eyebrow">Trazabilidad y retiro</p>
+          <h2>Reporte de origen-destino por lote</h2>
+          <form id="traceForm" class="card form-grid">
+            <label>
+              Lote
+              <select name="lotId" id="traceLotSelect"></select>
+            </label>
+            <button class="secondary" type="submit">Generar reporte</button>
+          </form>
+        </div>
+        <div class="card" id="traceReport"></div>
+      </section>
+
+      <section class="module split" id="temperaturas">
+        <div>
+          <p class="eyebrow">Cadena de frio</p>
+          <h2>Bitacora de temperaturas</h2>
+          <form id="temperatureForm" class="card form-grid">
+            <label>
+              Equipo
+              <input name="equipment" placeholder="Nevera 1" required />
+            </label>
+            <label>
+              Zona
+              <select name="zone">
+                <option value="refrigerated">Refrigerado</option>
+                <option value="frozen">Congelado</option>
+                <option value="dry">Seco</option>
+              </select>
+            </label>
+            <label>
+              Temperatura C
+              <input name="valueC" type="number" step="0.1" required />
+            </label>
+            <label>
+              Responsable
+              <input name="responsible" placeholder="Nombre del responsable" required />
+            </label>
+            <label class="wide">
+              Accion correctiva
+              <input name="correctiveAction" placeholder="Si aplica" />
+            </label>
+            <button class="primary" type="submit">Guardar lectura</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Incidentes de temperatura</h3>
+          <div id="temperatureIncidents" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="module" id="saneamiento">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">BPM y POES</p>
+            <h2>Control de saneamiento operativo</h2>
+          </div>
+        </div>
+        <div class="task-grid" id="sanitationGrid"></div>
+      </section>
+
+      <section class="module" id="cumplimiento">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Venezuela</p>
+            <h2>Matriz referencial de cumplimiento</h2>
+          </div>
+          <div class="score-pill" id="complianceScore"></div>
+        </div>
+        <p class="muted">
+          Guia operativa referencial para ayudar a controlar evidencia. Debe validarse con asesoria legal,
+          sanitaria y fiscal vigente antes de usarla como criterio definitivo.
+        </p>
+        <div class="compliance-grid" id="complianceGrid"></div>
+      </section>
+
+      <section class="module" id="etiquetas">
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">Etiquetado y metrologia</p>
+            <h2>Etiquetas internas por lote</h2>
+          </div>
+        </div>
+        <div class="label-grid" id="labelGrid"></div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/public/app.js"></script>
+  </body>
+</html>
