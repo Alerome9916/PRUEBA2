@@ -129,7 +129,7 @@ export function seed() {
     const expDate = daysFromNow(exp);
     const recv = dateTimeDaysAgo(Math.max(1, 25 - exp > 0 ? Math.min(20, 25 - exp) : 1));
     const status = exp < 0 ? 'activo' : 'activo'; // vencido se marca con barrido luego; lo dejamos activo para demostrar
-    const id = insBatch.run(pid, supIds[supIdx], lot, trace, qty, qty, cost, recv.slice(0, 10), daysFromNow(exp - 25), expDate, loc, status).lastInsertRowid;
+    const id = insBatch.run(pid, supIds[supIdx], lot, trace, qty, qty, cost, recv.slice(0, 10), recv.slice(0, 10), expDate, loc, status).lastInsertRowid;
     insMov.run('entrada', pid, id, qty, cost, lot, 'Recepción inicial (seed)', 2, recv);
     (batchIdsBySku[sku] = batchIdsBySku[sku] || []).push(id);
   }

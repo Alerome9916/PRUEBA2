@@ -51,6 +51,7 @@ export async function renderPOS(view) {
   const search = view.querySelector('#posSearch');
   search.addEventListener('input', () => renderTiles(search.value.toLowerCase()));
   view.querySelector('#posCheckout').addEventListener('click', checkout);
+  view.querySelector('#posPay').addEventListener('change', () => { if (cart.length) renderTotals(); });
   renderTiles('');
   renderCart();
 }
