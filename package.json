@@ -1,0 +1,19 @@
+{
+  "name": "los-churuguaros-charcuteria",
+  "version": "1.0.0",
+  "description": "Sistema integral de inventario, caducidad y FEFO para la charcuteria Los Churuguaros.",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "test": "node --test"
+  },
+  "keywords": [
+    "charcuteria",
+    "inventario",
+    "fefo",
+    "venezuela",
+    "caducidad"
+  ],
+  "author": "Los Churuguaros",
+  "license": "MIT"
+}
