@@ -1,0 +1,31 @@
+{
+  "name": "los-churuguaros-sistema",
+  "version": "1.0.0",
+  "description": "Sistema integral de inventario y control de caducidad (FEFO) para la Charcutería Los Churuguaros - Venezuela",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js",
+    "reset": "node server/seed.js --reset"
+  },
+  "keywords": [
+    "charcuteria",
+    "inventario",
+    "fefo",
+    "caducidad",
+    "venezuela",
+    "covenin"
+  ],
+  "author": "Charcutería Los Churuguaros",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "qrcode": "^1.5.4"
+  }
+}
